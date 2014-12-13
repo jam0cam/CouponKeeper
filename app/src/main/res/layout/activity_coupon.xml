@@ -1,0 +1,73 @@
+<FrameLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@android:color/white"
+    >
+   <include
+       android:id="@+id/tb"
+       layout="@layout/toolbar" />
+
+    <ImageView
+        android:layout_marginTop="?attr/actionBarSize"
+        android:id="@+id/image"
+        android:layout_width="wrap_content"
+        android:layout_height="300dp"
+        android:scaleType="fitCenter"
+        android:src="@drawable/no_image"
+        android:layout_below="@id/tb"
+        android:adjustViewBounds="true"
+        android:layout_gravity="center_horizontal"
+        />
+
+    <RelativeLayout
+        android:layout_gravity="bottom"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:paddingLeft="@dimen/default_outer_padding"
+        android:paddingRight="@dimen/default_outer_padding"
+        android:paddingBottom="@dimen/default_outer_padding"
+        >
+        <TextView
+            android:id="@+id/tv_title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Title"
+            style="@style/Title"
+            />
+        <EditText
+            android:id="@+id/et_company"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Company"
+            android:layout_below="@id/tv_title"
+            />
+        <TextView
+            android:id="@+id/tv"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Expiration "
+            android:layout_below="@id/et_company"
+            android:clickable="true"
+            style="@style/Title"
+            />
+        <TextView
+            android:id="@+id/tv_date"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/tv"
+            android:background="?android:attr/selectableItemBackground"
+            style="@style/Base.Widget.AppCompat.EditText"
+            />
+        <Button
+            android:id="@+id/btn_save"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/tv_date"
+            android:text="SAVE"
+            android:enabled="false"
+            />
+    </RelativeLayout>
+
+
+</FrameLayout>
