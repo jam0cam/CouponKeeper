@@ -18,14 +18,21 @@
             >
 
         </android.support.v7.widget.Toolbar>
-        <android.support.v7.widget.RecyclerView
-            android:id="@+id/rv"
-            android:scrollbars="none"
+
+        <ListView
+            android:id="@+id/lv"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:overScrollMode="never"
+            android:scrollbars="none"
+            android:padding="@dimen/default_outer_padding"
+            android:divider="@android:color/transparent"
+            android:dividerHeight="10.0sp"
+            android:headerDividersEnabled="true"
+            android:clipToPadding="false"
             >
-        </android.support.v7.widget.RecyclerView>
+
+        </ListView>
     </LinearLayout>
 
     <!--FAB-->

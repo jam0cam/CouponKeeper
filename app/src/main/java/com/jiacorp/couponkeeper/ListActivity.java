@@ -3,10 +3,10 @@ package com.jiacorp.couponkeeper;
 import android.content.Intent;
 import android.os.Bundle;
 import android.support.v7.app.ActionBarActivity;
-import android.support.v7.widget.LinearLayoutManager;
-import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
+import android.view.View;
 import android.widget.ImageButton;
+import android.widget.ListView;
 
 import java.util.List;
 
@@ -15,10 +15,12 @@ import butterknife.InjectView;
 import butterknife.OnClick;
 
 
-public class ListActivity extends ActionBarActivity {
+public class ListActivity extends ActionBarActivity implements View.OnClickListener {
 
-    @InjectView(R.id.rv)
-    RecyclerView mRecyclerView;
+    private static final String TAG = ListActivity.class.getName();
+
+    @InjectView(R.id.lv)
+    ListView mListView;
 
     @InjectView(R.id.toolbar)
     Toolbar mToolbar;
@@ -26,9 +28,9 @@ public class ListActivity extends ActionBarActivity {
     @InjectView(R.id.btn_add)
     ImageButton mBtnAdd;
 
-    private LinearLayoutManager mLayoutManager;
-
     MyDBHander mDbHandler;
+    ListAdapter mAdapter;
+    List<Coupon> mCoupons;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -39,27 +41,29 @@ public class ListActivity extends ActionBarActivity {
 
         setSupportActionBar(mToolbar);
 
-        // use this setting to improve performance if you know that changes
-        // in content do not change the layout size of the RecyclerView
-        mRecyclerView.setHasFixedSize(true);
-
-        // use a linear layout manager
-        mLayoutManager = new LinearLayoutManager(this);
-        mLayoutManager.setOrientation(LinearLayoutManager.VERTICAL);
-        mRecyclerView.setLayoutManager(mLayoutManager);
-
         mDbHandler = ((CouponApplication)getApplication()).getDbHandler();
+    }
 
-        List<Coupon> coupons2 = mDbHandler.getAllCoupons();
+    @Override
+    protected void onResume() {
+        super.onResume();
 
-        MyRecyclerAdapter mAdapter = new MyRecyclerAdapter(coupons2, getResources().getDimensionPixelSize(R.dimen.default_outer_padding),
-                getResources().getDimensionPixelOffset(R.dimen.half_padding));
-        mRecyclerView.setAdapter(mAdapter);
+        mCoupons = mDbHandler.getAllCoupons();
+        mAdapter = new ListAdapter(this, mCoupons);
+        mListView.setAdapter(mAdapter);
     }
 
     @OnClick(R.id.btn_add)
     public void addClicked() {
         Intent intent = new Intent(this, CouponActivity.class);
+        startActivity(intent);
+    }
+
+    @Override
+    public void onClick(View v) {
+        Coupon c = (Coupon) v.getTag();
+        Intent intent = new Intent(this, CouponActivity.class);
+        intent.putExtra(CouponActivity.EXTRA_COUPON, c);
         startActivity(intent);
     }
 }

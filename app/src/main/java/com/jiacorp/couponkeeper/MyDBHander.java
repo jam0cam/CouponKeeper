@@ -63,6 +63,37 @@ public class MyDBHander extends SQLiteOpenHelper {
         onCreate(db);
     }
 
+    public void updateCoupon(Coupon coupon) throws DBException {
+        Log.d(TAG, "update coupon " + coupon.title + "  path:" + coupon.filePath);
+        ContentValues values = new ContentValues();
+        values.put(COLUMN_TITLE, coupon.title);
+        values.put(COLUMN_EXP_DATE, coupon.expDateString);
+        values.put(COLUMN_PATH, coupon.filePath);
+        values.put(COLUMN_ID, coupon.id);
+
+        if (coupon.used) {
+            values.put(COLUMN_IS_USED, 1);
+        } else {
+            values.put(COLUMN_IS_USED, 0);
+        }
+
+        SQLiteDatabase db = this.getWritableDatabase();
+
+        int rowsAffected = db.update(TABLE_COUPONS, values, COLUMN_ID +  "=" + coupon.id, null);
+        db.close();
+
+        if (rowsAffected == 0) {
+            Log.d(TAG, "Issue saving coupon, probably wasn't able to save");
+            throw new DBException("Issue saving coupon, probably wasn't able to save");
+        } else if (rowsAffected > 1 || rowsAffected < 0) {
+            Log.d(TAG, "Something went wrong with updating the coupon. " + rowsAffected + " was affected");
+            throw new DBException("Something went wrong with updating the coupon. " + rowsAffected + " was affected");
+        } else {
+            Log.d(TAG, "Successfully updated coupon");
+        }
+
+    }
+
     public void addCoupon(Coupon coupon) throws DBException {
         Log.d(TAG, "adding coupon " + coupon.title + "  path:" + coupon.filePath);
         ContentValues values = new ContentValues();
@@ -151,8 +182,14 @@ public class MyDBHander extends SQLiteOpenHelper {
     public boolean deleteCoupon(String id) {
         boolean result = false;
         SQLiteDatabase db = this.getWritableDatabase();
-        db.delete(TABLE_COUPONS, COLUMN_ID + " = ?", new String[] { id });
-        result = true;
+        int rowsDeleted = db.delete(TABLE_COUPONS, COLUMN_ID + " = ?", new String[] { id });
+
+        if (rowsDeleted == 1) {
+            result = true;
+        } else {
+            Log.d(TAG, rowsDeleted + " were deleted when trying to delete coupon id: " + id);
+        }
+
         db.close();
         return result;
     }

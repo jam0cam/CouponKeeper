@@ -27,11 +27,14 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.jiacorp.couponkeeper.exceptions.DBException;
+import com.nostra13.universalimageloader.core.ImageLoader;
 
 import java.io.File;
 import java.text.DateFormat;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.List;
 import java.util.UUID;
 
 import butterknife.ButterKnife;
@@ -40,6 +43,8 @@ import butterknife.OnClick;
 
 
 public class CouponActivity extends ActionBarActivity {
+
+    public static final String EXTRA_COUPON = "coupon";
 
     private static final int PICK_FROM_GALLERY = 1;
     private static final int CAMERA = 2;
@@ -61,7 +66,7 @@ public class CouponActivity extends ActionBarActivity {
     EditText mEtCompany;
 
     @InjectView(R.id.image)
-    ImageView mImage;
+    ImageView mImageView;
 
     DateFormat mDateFormat;
 
@@ -73,7 +78,13 @@ public class CouponActivity extends ActionBarActivity {
     Uri mNewPhotoUri;
     Uri mSelectedImageUri;
 
+    Coupon mCoupon;
+
     MyDBHander mDbHandler;
+    ImageLoader mImageLoader;
+
+    Calendar mDefaultCalendar;
+    boolean mIsEditMode = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -84,8 +95,22 @@ public class CouponActivity extends ActionBarActivity {
         setSupportActionBar(mToolbar);
 
         mDateFormat = android.text.format.DateFormat.getDateFormat(this);
-        String date = mDateFormat.format(new Date());
-        mTvDate.setText(date);
+
+        Coupon coupon = (Coupon) getIntent().getSerializableExtra(EXTRA_COUPON);
+
+        mImageLoader = ImageLoader.getInstance();
+
+        mDefaultCalendar = Calendar.getInstance();
+
+        if (coupon != null) {
+            mCoupon = coupon;
+            initializeWithCoupon();
+            mIsEditMode = true;
+            checkCompletedFields();
+        } else {
+            String date = mDateFormat.format(new Date());
+            mTvDate.setText(date);
+        }
 
         mDbHandler = ((CouponApplication)getApplication()).getDbHandler();
         mEtCompany.addTextChangedListener(new TextWatcher() {
@@ -115,11 +140,22 @@ public class CouponActivity extends ActionBarActivity {
         });
     }
 
+    private void initializeWithCoupon() {
+        mTvDate.setText(mCoupon.expDateString);
+        mEtCompany.setText(mCoupon.title);
+        mImageLoader.displayImage("file:///" + mCoupon.filePath, mImageView);
+
+        List<String> dates = Arrays.asList(mCoupon.expDateString.split("/"));
+
+        mDefaultCalendar.set(Integer.parseInt(dates.get(2)), Integer.parseInt(dates.get(0))-1, Integer.parseInt(dates.get(1)));
+    }
+
     private void showCalendar() {
-        Calendar c = Calendar.getInstance();
-        int mYear = c.get(Calendar.YEAR);
-        int mMonth = c.get(Calendar.MONTH);
-        int mDay = c.get(Calendar.DAY_OF_MONTH);
+        int mYear = mDefaultCalendar.get(Calendar.YEAR);
+        int mMonth = mDefaultCalendar.get(Calendar.MONTH);
+        int mDay = mDefaultCalendar.get(Calendar.DAY_OF_MONTH);
+
+
         System.out.println("the selected " + mDay);
         DatePickerDialog dialog = new DatePickerDialog(CouponActivity.this,
                 new DatePickerDialog.OnDateSetListener() {
@@ -163,6 +199,27 @@ public class CouponActivity extends ActionBarActivity {
 
             // starting the image capture Intent
             startActivityForResult(intent, CAMERA);
+        } else if (item.getItemId() == R.id.action_delete) {
+            if (mCoupon == null || TextUtils.isEmpty(mCoupon.id)) {
+                //this coupon haven't been saved yet. Just exit activity
+                finish();
+                return true;
+            }
+
+            //delete the actual image saved on the SD card.
+            File f = new File(mCoupon.filePath);
+            boolean result = f.delete();
+            if (!result) {
+                Log.d(TAG, getString(R.string.delete_file_error));
+                Toast.makeText(this, getResources().getString(R.string.delete_file_error), Toast.LENGTH_SHORT).show();
+            } else {
+                if (mDbHandler.deleteCoupon(mCoupon.id)) {
+                    finish();
+                } else {
+                    Log.d(TAG, getString(R.string.delete_db_error));
+                    Toast.makeText(this, getResources().getString(R.string.delete_db_error), Toast.LENGTH_SHORT).show();
+                }
+            }
         }
 
         return super.onOptionsItemSelected(item);
@@ -176,7 +233,7 @@ public class CouponActivity extends ActionBarActivity {
 
             mSelectedImageUri = data.getData();
             if (mSelectedImageUri != null) {
-                mImage.setImageURI(mSelectedImageUri);
+                mImageView.setImageURI(mSelectedImageUri);
                 mImageSelected = true;
                 checkCompletedFields();
             }
@@ -204,7 +261,6 @@ public class CouponActivity extends ActionBarActivity {
     }
 
     private void displayCapturedImage() {
-
         try {
 
             // bimatp factory
@@ -215,13 +271,9 @@ public class CouponActivity extends ActionBarActivity {
 
             Log.d(TAG, "photo saved in path: " + mNewPhotoUri.getPath());
             final Bitmap bitmap = BitmapFactory.decodeFile(mNewPhotoUri.getPath(),options);
-            mImage.setImageBitmap(bitmap);
-        }
-
-        catch (NullPointerException e) {
-
+            mImageView.setImageBitmap(bitmap);
+        } catch (NullPointerException e) {
             e.printStackTrace();
-
         }
 
     }
@@ -269,7 +321,7 @@ public class CouponActivity extends ActionBarActivity {
             return;
         }
 
-        if (!mImageSelected && mNewPhotoUri == null) {
+        if (!mImageSelected && mNewPhotoUri == null && !mIsEditMode) {
             mBtnSave.setEnabled(false);
             return;
         }
@@ -291,21 +343,53 @@ public class CouponActivity extends ActionBarActivity {
             Log.d(TAG, "PATH:" + mSelectedImageUri.getPath());
         }
 
-        //rename the path to have proper convention, then save
-        Coupon c = new Coupon(mEtCompany.getText().toString(), mTvDate.getText().toString(), path);
+        if (mIsEditMode) {
+            //remember this old path, so we can delete that image
+            String oldPath = mCoupon.filePath;
 
-        //rename the path to have proper convention, then save
-        renameFile(c, path);
+            mCoupon.title = mEtCompany.getText().toString();
+            mCoupon.expDateString = mTvDate.getText().toString();
 
-        try {
-            mDbHandler.addCoupon(c);
-            finish();
-        } catch (DBException e) {
-            Toast.makeText(this, "Saved successfully", Toast.LENGTH_SHORT).show();
-            e.printStackTrace();
+            if (!TextUtils.isEmpty(path)) {
+                //should do this after title and expDateString has been set.
+                renameFile(mCoupon, path);
+            }
+
+            try {
+                mDbHandler.updateCoupon(mCoupon);
+
+                File f = new File(oldPath);
+                f.delete();
+
+                finish();
+            } catch (DBException e) {
+                Toast.makeText(this, "Cannot save coupon", Toast.LENGTH_SHORT).show();
+                e.printStackTrace();
+            }
+
+
+        } else {
+            //rename the path to have proper convention, then save
+            mCoupon = new Coupon(mEtCompany.getText().toString(), mTvDate.getText().toString(), path);
+            //rename the path to have proper convention, then save
+            renameFile(mCoupon, path);
+
+            try {
+                mDbHandler.addCoupon(mCoupon);
+                finish();
+            } catch (DBException e) {
+                Toast.makeText(this, "Cannot save coupon", Toast.LENGTH_SHORT).show();
+                e.printStackTrace();
+            }
         }
+
     }
 
+    /**
+     * Formats a file name to contain meta data about the expiration date and the title
+     * @param c The coupon, whose file name is going to change.
+     * @param originalPath  the original path that will be renamed.
+     */
     private void renameFile(Coupon c, String originalPath) {
 
         File file = new File(originalPath);
