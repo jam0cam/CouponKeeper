@@ -8,4 +8,6 @@
     <string name="action_delete">delete</string>
     <string name="delete_db_error">There was an issue deleting this coupon</string>
     <string name="delete_file_error">There was an issue deleting the image from the SD card.</string>
+    <string name="action_used">Mark as Used</string>
+    <string name="action_check">Check</string>
 </resources>

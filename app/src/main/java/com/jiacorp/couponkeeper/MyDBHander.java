@@ -63,7 +63,7 @@ public class MyDBHander extends SQLiteOpenHelper {
         onCreate(db);
     }
 
-    public void updateCoupon(Coupon coupon) throws DBException {
+    public void updateCoupon(Coupon coupon) {
         Log.d(TAG, "update coupon " + coupon.title + "  path:" + coupon.filePath);
         ContentValues values = new ContentValues();
         values.put(COLUMN_TITLE, coupon.title);
@@ -84,10 +84,8 @@ public class MyDBHander extends SQLiteOpenHelper {
 
         if (rowsAffected == 0) {
             Log.d(TAG, "Issue saving coupon, probably wasn't able to save");
-            throw new DBException("Issue saving coupon, probably wasn't able to save");
         } else if (rowsAffected > 1 || rowsAffected < 0) {
             Log.d(TAG, "Something went wrong with updating the coupon. " + rowsAffected + " was affected");
-            throw new DBException("Something went wrong with updating the coupon. " + rowsAffected + " was affected");
         } else {
             Log.d(TAG, "Successfully updated coupon");
         }

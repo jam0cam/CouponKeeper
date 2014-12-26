@@ -14,7 +14,6 @@
         android:layout_height="wrap_content"
         android:orientation="vertical"
         >
-
         <FrameLayout
             android:layout_width="match_parent"
             android:layout_height="@dimen/image_height">
@@ -55,12 +54,20 @@
                 android:layout_height="wrap_content"
                 android:layout_below="@id/tv_title"
                 android:layout_toRightOf="@id/tv"
-                style="@style/Base.Widget.AppCompat.EditText"
-                android:background="?android:attr/selectableItemBackground"
+                android:layout_alignBaseline="@id/tv"
                 android:clickable="false"
+                style="@style/Subtitle"
                 />
         </RelativeLayout>
     </LinearLayout>
 
+    <View
+        android:id="@+id/selection_tint"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@android:color/darker_gray"
+        android:alpha=".50"
+        android:visibility="gone"
+        />
 </android.support.v7.widget.CardView>
 

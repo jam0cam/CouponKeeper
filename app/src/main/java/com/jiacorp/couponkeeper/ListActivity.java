@@ -4,10 +4,18 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.support.v7.app.ActionBarActivity;
 import android.support.v7.widget.Toolbar;
+import android.util.Log;
+import android.util.SparseBooleanArray;
+import android.view.ActionMode;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
+import android.widget.AbsListView;
 import android.widget.ImageButton;
 import android.widget.ListView;
 
+import java.io.File;
 import java.util.List;
 
 import butterknife.ButterKnife;
@@ -15,9 +23,17 @@ import butterknife.InjectView;
 import butterknife.OnClick;
 
 
-public class ListActivity extends ActionBarActivity implements View.OnClickListener {
+public class ListActivity extends ActionBarActivity implements
+        View.OnClickListener,
+        View.OnLongClickListener, android.view.ActionMode.Callback {
 
     private static final String TAG = ListActivity.class.getName();
+
+    enum Mode {
+        CHECK, DELETE, BOTH
+    }
+
+    Mode mMode;
 
     @InjectView(R.id.lv)
     ListView mListView;
@@ -31,6 +47,7 @@ public class ListActivity extends ActionBarActivity implements View.OnClickListe
     MyDBHander mDbHandler;
     ListAdapter mAdapter;
     List<Coupon> mCoupons;
+    ActionMode mActionMode;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -48,10 +65,35 @@ public class ListActivity extends ActionBarActivity implements View.OnClickListe
     protected void onResume() {
         super.onResume();
 
-        mCoupons = mDbHandler.getAllCoupons();
-        mAdapter = new ListAdapter(this, mCoupons);
-        mListView.setAdapter(mAdapter);
+        Log.d(TAG, "onResume");
+        reloadCoupons();
     }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        // Inflate the menu; this adds items to the action bar if it is present.
+        getMenuInflater().inflate(R.menu.menu_list, menu);
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        if (item.getItemId() == R.id.action_check) {
+            mMode = Mode.CHECK;
+            mActionMode = mToolbar.startActionMode(ListActivity.this);
+            mActionMode.setTitle(mListView.getCheckedItemCount() + " Selected");
+        } else if (item.getItemId() == R.id.action_delete) {
+            mMode = Mode.DELETE;
+            mActionMode = mToolbar.startActionMode(ListActivity.this);
+            mActionMode.setTitle(mListView.getCheckedItemCount() + " Selected");
+        } else {
+            throw new UnsupportedOperationException("Unsupported method");
+        }
+
+        return super.onOptionsItemSelected(item);
+    }
+
+
 
     @OnClick(R.id.btn_add)
     public void addClicked() {
@@ -59,11 +101,136 @@ public class ListActivity extends ActionBarActivity implements View.OnClickListe
         startActivity(intent);
     }
 
+    private void reloadCoupons() {
+        mCoupons = mDbHandler.getAllCoupons();
+        mListView.setChoiceMode(AbsListView.CHOICE_MODE_MULTIPLE);
+        mAdapter = new ListAdapter(this, mCoupons);
+        mListView.setAdapter(mAdapter);
+    }
+
+    private void deleteCheckedItems() {
+        SparseBooleanArray checkedItems = mListView.getCheckedItemPositions();
+        if (checkedItems != null) {
+            for (int i=0; i<checkedItems.size(); i++) {
+                if (checkedItems.valueAt(i)) {
+                    Coupon c = mCoupons.get(checkedItems.keyAt(i));
+                    Log.d(TAG, "deleting " + c.title + " file");
+                    mDbHandler.deleteCoupon(c.id);
+
+                    File f = new File(c.filePath);
+                    f.delete();
+                }
+            }
+
+            reloadCoupons();
+        }
+    }
+
+    private void markCheckedItems() {
+        SparseBooleanArray checkedItems = mListView.getCheckedItemPositions();
+        if (checkedItems != null) {
+            for (int i=0; i<checkedItems.size(); i++) {
+                if (checkedItems.valueAt(i)) {
+                    Coupon c = mCoupons.get(checkedItems.keyAt(i));
+                    c.used = true;
+                    Log.d(TAG, "Marking " + c.title + " as used.");
+                    mDbHandler.updateCoupon(c);
+                }
+            }
+        }
+    }
+
+
     @Override
     public void onClick(View v) {
+        Log.d(TAG, "onClick");
+        if (mActionMode != null) {
+            v.setSelected(true);
+
+            Coupon c = (Coupon) v.getTag();
+            int selectedItem = mCoupons.indexOf(c);
+            boolean toVal = !mListView.isItemChecked(selectedItem);
+            mListView.setItemChecked(selectedItem, toVal);
+            Log.d(TAG, "Setting check to " + toVal + "  for index:" + selectedItem + "  There are " + mListView.getCheckedItemCount() + " checked items");
+            mActionMode.setTitle(mListView.getCheckedItemCount() + " Selected");
+        } else {
+            Coupon c = (Coupon) v.getTag();
+            Intent intent = new Intent(this, CouponActivity.class);
+            intent.putExtra(CouponActivity.EXTRA_COUPON, c);
+            startActivity(intent);
+        }
+    }
+
+    @Override
+    public boolean onLongClick(View v) {
+        Log.d(TAG, "onLongClick");
         Coupon c = (Coupon) v.getTag();
-        Intent intent = new Intent(this, CouponActivity.class);
-        intent.putExtra(CouponActivity.EXTRA_COUPON, c);
-        startActivity(intent);
+        int selectedItem = mCoupons.indexOf(c);
+
+        if (mActionMode == null) {
+            // Start the CAB using the ActionMode.Callback defined above
+            mMode = Mode.BOTH;
+            mActionMode = mToolbar.startActionMode(ListActivity.this);
+            Log.d(TAG, "started action mode");
+        }
+
+        v.setSelected(true);
+
+        boolean toVal = !mListView.isItemChecked(selectedItem);
+        mListView.setItemChecked(selectedItem, toVal);
+        Log.d(TAG, "Setting check to " + toVal + "  for index:" + selectedItem + "  There are " + mListView.getCheckedItemCount() + " checked items");
+        mActionMode.setTitle(mListView.getCheckedItemCount() + " Selected");
+
+        return true;
+    }
+
+    @Override
+    public boolean onCreateActionMode(android.view.ActionMode mode, Menu menu) {
+        // Inflate a menu resource providing context menu items
+        MenuInflater inflater = mode.getMenuInflater();
+        // Assumes that you have "contexual.xml" menu resources
+
+        if (mMode == Mode.BOTH) {
+            inflater.inflate(R.menu.menu_action_both, menu);
+        } else if (mMode == Mode.CHECK) {
+            inflater.inflate(R.menu.menu_action_check, menu);
+        } else if (mMode == Mode.DELETE) {
+            inflater.inflate(R.menu.menu_action_delete, menu);
+        } else {
+            throw new UnsupportedOperationException("Unsupported method");
+        }
+
+        return true;
+    }
+
+    @Override
+    public boolean onPrepareActionMode(android.view.ActionMode mode, Menu menu) {
+        return false;
+    }
+
+    @Override
+    public boolean onActionItemClicked(android.view.ActionMode mode, MenuItem item) {
+        if (item.getItemId() == R.id.action_delete) {
+            deleteCheckedItems();
+        } else if (item.getItemId() == R.id.action_check) {
+            markCheckedItems();
+        }
+
+        mActionMode.finish();
+
+        //reset the listview
+        mAdapter = new ListAdapter(this, mCoupons);
+        mListView.setAdapter(mAdapter);
+
+        return true;
+    }
+
+    @Override
+    public void onDestroyActionMode(android.view.ActionMode mode) {
+        Log.d(TAG, "Clearing all the choices");
+
+        mActionMode = null;
+        mListView.clearChoices();
+        mAdapter.notifyDataSetChanged();
     }
 }

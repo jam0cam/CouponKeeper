@@ -2,4 +2,6 @@
 <resources>
     <color name="blue">#2196F3</color>
     <color name="blue_ripple">#BBDEFB</color>
+    <color name="green">#6400ff00</color>
+    <color name="transparent">#00FFFFFF</color>
 </resources>

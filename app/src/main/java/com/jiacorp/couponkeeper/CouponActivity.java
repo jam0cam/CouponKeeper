@@ -5,24 +5,26 @@ import android.content.ContentValues;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.PorterDuff;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
 import android.provider.MediaStore;
 import android.support.v7.app.ActionBarActivity;
 import android.support.v7.widget.Toolbar;
-import android.text.Editable;
 import android.text.TextUtils;
-import android.text.TextWatcher;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.MotionEvent;
 import android.view.View;
-import android.widget.Button;
+import android.widget.CompoundButton;
 import android.widget.DatePicker;
 import android.widget.EditText;
+import android.widget.FrameLayout;
 import android.widget.ImageView;
+import android.widget.RelativeLayout;
+import android.widget.Switch;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -39,7 +41,6 @@ import java.util.UUID;
 
 import butterknife.ButterKnife;
 import butterknife.InjectView;
-import butterknife.OnClick;
 
 
 public class CouponActivity extends ActionBarActivity {
@@ -65,13 +66,19 @@ public class CouponActivity extends ActionBarActivity {
     @InjectView(R.id.et_company)
     EditText mEtCompany;
 
-    @InjectView(R.id.image)
-    ImageView mImageView;
+    @InjectView(R.id.mark_as_used)
+    Switch mMarkAsUsed;
+
+    @InjectView(R.id.img_main)
+    ImageView mImgMain;
 
     DateFormat mDateFormat;
 
-    @InjectView(R.id.btn_save)
-    Button mBtnSave;
+    @InjectView(R.id.frame_layout)
+    FrameLayout mFrameLayout;
+
+    @InjectView(R.id.relative_layout)
+    RelativeLayout mRelativeLayout;
 
     boolean mImageSelected = false;
 
@@ -81,10 +88,11 @@ public class CouponActivity extends ActionBarActivity {
     Coupon mCoupon;
 
     MyDBHander mDbHandler;
-    ImageLoader mImageLoader;
 
     Calendar mDefaultCalendar;
     boolean mIsEditMode = false;
+    private ImageLoader mImageLoader;
+    boolean isDeleted = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -94,43 +102,32 @@ public class CouponActivity extends ActionBarActivity {
 
         setSupportActionBar(mToolbar);
 
-        mDateFormat = android.text.format.DateFormat.getDateFormat(this);
-
-        Coupon coupon = (Coupon) getIntent().getSerializableExtra(EXTRA_COUPON);
-
         mImageLoader = ImageLoader.getInstance();
-
+        mDateFormat = android.text.format.DateFormat.getDateFormat(this);
+        Coupon coupon = (Coupon) getIntent().getSerializableExtra(EXTRA_COUPON);
         mDefaultCalendar = Calendar.getInstance();
 
         if (coupon != null) {
             mCoupon = coupon;
             initializeWithCoupon();
             mIsEditMode = true;
-            checkCompletedFields();
+            mMarkAsUsed.setChecked(mCoupon.used);
+
+            if (mCoupon.used) {
+                showOverlay();
+            }
+
         } else {
             String date = mDateFormat.format(new Date());
             mTvDate.setText(date);
+            mImgMain.setImageDrawable(getResources().getDrawable(R.drawable.no_image));
         }
 
         mDbHandler = ((CouponApplication)getApplication()).getDbHandler();
-        mEtCompany.addTextChangedListener(new TextWatcher() {
-            @Override
-            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
-            }
-
-            @Override
-            public void onTextChanged(CharSequence s, int start, int before, int count) {
-            }
-            @Override
-            public void afterTextChanged(Editable s) {
-                checkCompletedFields();
-            }
-        });
-
         mTvDate.setOnTouchListener(new View.OnTouchListener() {
             @Override
             public boolean onTouch(View v, MotionEvent event) {
-                if (event.getAction() == MotionEvent.ACTION_UP) {
+                if (event.getAction() == MotionEvent.ACTION_DOWN) {
                     showCalendar();
                     return true;
                 }
@@ -138,12 +135,32 @@ public class CouponActivity extends ActionBarActivity {
                 return false;
             }
         });
+
+        mMarkAsUsed.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                if (isChecked) {
+                    showOverlay();
+                } else {
+                    hideOverlay();
+                }
+            }
+        });
+    }
+
+    private void hideOverlay() {
+        mImgMain.setColorFilter(null);
+    }
+
+    private void showOverlay() {
+        mImgMain.setColorFilter(getResources().getColor(R.color.green), PorterDuff.Mode.SRC_ATOP);
     }
 
     private void initializeWithCoupon() {
         mTvDate.setText(mCoupon.expDateString);
         mEtCompany.setText(mCoupon.title);
-        mImageLoader.displayImage("file:///" + mCoupon.filePath, mImageView);
+
+        mImageLoader.displayImage("file:///" + mCoupon.filePath, mImgMain);
 
         List<String> dates = Arrays.asList(mCoupon.expDateString.split("/"));
 
@@ -162,7 +179,6 @@ public class CouponActivity extends ActionBarActivity {
                     @Override
                     public void onDateSet(DatePicker view, int year, int monthOfYear, int dayOfMonth) {
                         mTvDate.setText(mDateFormat.format(new Date(year-1900, monthOfYear, dayOfMonth)));
-                        checkCompletedFields();
                     }
                 }, mYear, mMonth, mDay);
         dialog.show();
@@ -212,14 +228,15 @@ public class CouponActivity extends ActionBarActivity {
             if (!result) {
                 Log.d(TAG, getString(R.string.delete_file_error));
                 Toast.makeText(this, getResources().getString(R.string.delete_file_error), Toast.LENGTH_SHORT).show();
-            } else {
-                if (mDbHandler.deleteCoupon(mCoupon.id)) {
-                    finish();
-                } else {
-                    Log.d(TAG, getString(R.string.delete_db_error));
-                    Toast.makeText(this, getResources().getString(R.string.delete_db_error), Toast.LENGTH_SHORT).show();
-                }
             }
+
+            if (!mDbHandler.deleteCoupon(mCoupon.id)) {
+                Log.d(TAG, getString(R.string.delete_db_error));
+                Toast.makeText(this, getResources().getString(R.string.delete_db_error), Toast.LENGTH_SHORT).show();
+            }
+
+            isDeleted = true;
+            finish();
         }
 
         return super.onOptionsItemSelected(item);
@@ -233,9 +250,8 @@ public class CouponActivity extends ActionBarActivity {
 
             mSelectedImageUri = data.getData();
             if (mSelectedImageUri != null) {
-                mImageView.setImageURI(mSelectedImageUri);
+                mImgMain.setImageURI(mSelectedImageUri);
                 mImageSelected = true;
-                checkCompletedFields();
             }
         } else if (requestCode == CAMERA) {
             if (resultCode == RESULT_OK) {
@@ -244,8 +260,6 @@ public class CouponActivity extends ActionBarActivity {
                 // display it in image view
 
                 displayCapturedImage();
-                checkCompletedFields();
-
             } else if (resultCode == RESULT_CANCELED) {
 
                 mNewPhotoUri = null;
@@ -271,7 +285,7 @@ public class CouponActivity extends ActionBarActivity {
 
             Log.d(TAG, "photo saved in path: " + mNewPhotoUri.getPath());
             final Bitmap bitmap = BitmapFactory.decodeFile(mNewPhotoUri.getPath(),options);
-            mImageView.setImageBitmap(bitmap);
+            mImgMain.setImageBitmap(bitmap);
         } catch (NullPointerException e) {
             e.printStackTrace();
         }
@@ -310,27 +324,32 @@ public class CouponActivity extends ActionBarActivity {
     /**
      * If all fields are filled out, then we will enable the save button. Otherwise, disable it.
      */
-    private void checkCompletedFields() {
+    private boolean checkCompletedFields() {
         if (TextUtils.isEmpty(mEtCompany.getText().toString())) {
-            mBtnSave.setEnabled(false);
-            return;
+            return false;
         }
 
         if (TextUtils.isEmpty(mTvDate.getText().toString())) {
-            mBtnSave.setEnabled(false);
-            return;
+            return false;
         }
 
         if (!mImageSelected && mNewPhotoUri == null && !mIsEditMode) {
-            mBtnSave.setEnabled(false);
-            return;
+            return false;
         }
 
-        mBtnSave.setEnabled(true);
+        return true;
     }
 
-    @OnClick(R.id.btn_save)
-    public void onClicked() {
+    @Override
+    protected void onPause() {
+        super.onPause();
+
+        if (!isDeleted && checkCompletedFields()) {
+            save();
+        }
+    }
+
+    public void save() {
         Log.d(TAG, "title:" + mEtCompany.getText().toString());
         Log.d(TAG, "Expiration Date:" + mTvDate.getText().toString());
 
@@ -344,33 +363,31 @@ public class CouponActivity extends ActionBarActivity {
         }
 
         if (mIsEditMode) {
-            //remember this old path, so we can delete that image
-            String oldPath = mCoupon.filePath;
+            String oldPath = null;
 
             mCoupon.title = mEtCompany.getText().toString();
             mCoupon.expDateString = mTvDate.getText().toString();
+            mCoupon.used = mMarkAsUsed.isChecked();
 
-            if (!TextUtils.isEmpty(path)) {
+            if (!TextUtils.isEmpty(path)) { //this means a new photo was taken
+                //remember this old path, so we can delete that image
+                oldPath = mCoupon.filePath;
                 //should do this after title and expDateString has been set.
                 renameFile(mCoupon, path);
             }
 
-            try {
-                mDbHandler.updateCoupon(mCoupon);
+            mDbHandler.updateCoupon(mCoupon);
 
+            if (oldPath != null) {
+                //there was a new image taken, delete the old one
                 File f = new File(oldPath);
                 f.delete();
-
-                finish();
-            } catch (DBException e) {
-                Toast.makeText(this, "Cannot save coupon", Toast.LENGTH_SHORT).show();
-                e.printStackTrace();
             }
 
-
+            finish();
         } else {
             //rename the path to have proper convention, then save
-            mCoupon = new Coupon(mEtCompany.getText().toString(), mTvDate.getText().toString(), path);
+            mCoupon = new Coupon(mEtCompany.getText().toString(), mTvDate.getText().toString(), path, mMarkAsUsed.isChecked());
             //rename the path to have proper convention, then save
             renameFile(mCoupon, path);
 

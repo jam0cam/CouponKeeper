@@ -23,10 +23,11 @@ public class Coupon implements Serializable {
         this.expDateString = expDateString;
     }
 
-    public Coupon(String title, String expDate, String path) {
+    public Coupon(String title, String expDate, String path, boolean isUsed) {
         this.title = title;
         this.expDateString = expDate;
         this.filePath = path;
+        this.used = isUsed;
     }
 
     public Coupon() {

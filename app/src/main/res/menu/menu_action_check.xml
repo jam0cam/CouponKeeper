@@ -1,0 +1,10 @@
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    tools:context="com.jiacorp.couponkeeper.CouponActivity">
+    <item android:id="@+id/action_check" android:title="@string/action_check"
+        app:showAsAction="always"
+        android:icon="@drawable/ic_check_black_24dp"
+        />
+
+</menu>

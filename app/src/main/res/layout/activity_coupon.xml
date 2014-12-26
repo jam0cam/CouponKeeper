@@ -1,72 +1,106 @@
 <FrameLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@android:color/white"
     >
-   <include
-       android:id="@+id/tb"
-       layout="@layout/toolbar"
-       />
+    <include
+        android:id="@+id/tb"
+        layout="@layout/toolbar"
+        />
 
-    <RelativeLayout
-        android:layout_gravity="bottom"
+    <ScrollView
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="match_parent"
         android:layout_marginTop="?attr/actionBarSize"
-        android:padding="@dimen/default_outer_padding"
         >
-        <ImageView
-            android:id="@+id/image"
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:scaleType="fitCenter"
-            android:src="@drawable/no_image"
-            android:adjustViewBounds="true"
-            android:layout_gravity="center_horizontal"
-            android:layout_above="@+id/tv_title"
-            />
+            android:orientation="vertical"
+            android:paddingBottom="@dimen/default_outer_padding"
+            >
+            <FrameLayout
+                android:id="@+id/frame_layout"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_above="@+id/tv_title"
+                >
+                <ImageView
+                    android:id="@+id/img_main"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:scaleType="fitXY"
+                    android:adjustViewBounds="true"
+                    android:layout_gravity="center"
+                    />
+            </FrameLayout>
 
-        <TextView
-            android:id="@id/tv_title"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Title"
-            android:layout_above="@+id/et_company"
-            style="@style/Title"
-            />
-        <EditText
-            android:id="@id/et_company"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:hint="Company"
-            android:layout_above="@+id/tv"
-            />
-        <TextView
-            android:id="@id/tv"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Expiration "
-            android:layout_above="@+id/tv_date"
-            android:clickable="true"
-            style="@style/Title"
-            />
-        <TextView
-            android:id="@id/tv_date"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_above="@+id/btn_save"
-            android:background="?android:attr/selectableItemBackground"
-            style="@style/Base.Widget.AppCompat.EditText"
-            />
-        <Button
-            android:id="@id/btn_save"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="SAVE"
-            android:enabled="false"
-            android:layout_alignParentBottom="true"
-            />
-    </RelativeLayout>
+            <RelativeLayout
+                android:id="@+id/relative_layout"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:padding="@dimen/default_outer_padding"
+                android:descendantFocusability="beforeDescendants"
+                android:focusableInTouchMode="true"
+                >
+                <TextView
+                    android:id="@+id/tv_title"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Title"
+                    style="@style/Title"
+                    />
+                <TextView
+                    android:id="@+id/tv_mark"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Mark as Used"
+                    android:layout_alignParentRight="true"
+                    style="@style/Title"
+                    />
+                <EditText
+                    android:id="@+id/et_company"
+                    android:layout_width="200dp"
+                    android:layout_height="wrap_content"
+                    android:layout_below="@id/tv_title"
+                    android:hint="Company"
+                    android:singleLine="true"
+                    />
+                <Switch
+                    android:id="@+id/mark_as_used"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_alignParentRight="true"
+                    android:layout_alignBaseline="@id/et_company"
+                    android:layout_below="@id/tv_mark"
+
+                    />
+            </RelativeLayout>
+
+            <TextView
+                android:id="@+id/tv"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Expiration "
+                android:paddingLeft="@dimen/default_outer_padding"
+                android:paddingRight="@dimen/default_outer_padding"
+                android:clickable="true"
+                style="@style/Title"
+                />
+            <TextView
+                android:id="@+id/tv_date"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                tools:text="00/00/0000"
+                android:paddingLeft="@dimen/default_outer_padding"
+                android:paddingRight="@dimen/default_outer_padding"
+                style="@style/Subtitle"
+                />
+            </LinearLayout>
+
+
+    </ScrollView>
 
 </FrameLayout>
