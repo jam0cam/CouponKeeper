@@ -2,6 +2,20 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools" tools:context=".ListActivity">
 
+    <item
+        android:title="@string/action_sort"
+        app:showAsAction="always"
+        android:icon="@drawable/ic_sort_white_24dp"
+        >
+        <menu>
+            <item
+                android:id="@+id/action_sort_exp_soonest"
+                android:title="Sort by Expiring Soonest" />
+            <item
+                android:id="@+id/action_sort_coupon_name"
+                android:title="Sort by Coupon Name" />
+        </menu>
+    </item>
     <item android:id="@+id/action_check" android:title="@string/action_check"
         app:showAsAction="always"
         android:icon="@drawable/ic_check_white_24dp"

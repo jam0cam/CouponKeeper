@@ -116,12 +116,22 @@ public class MyDBHander extends SQLiteOpenHelper {
         }
     }
 
-    public List<Coupon> getAllCoupons() {
+    public List<Coupon> getAllCoupons(ListActivity.Sort sort) {
         Log.d(TAG, "getting coupon");
         SQLiteDatabase db = this.getWritableDatabase();
 
+        String orderBy = null;
+
+        if (sort != null) {
+            if (sort == ListActivity.Sort.EXP_DATE_ASC) {
+                orderBy = COLUMN_EXP_DATE + " ASC";
+            } else if (sort == ListActivity.Sort.NAME_ASC) {
+                orderBy = COLUMN_TITLE + " ASC";
+            }
+        }
+
         Cursor cursor = db.query(TABLE_COUPONS,
-                allColumns, null, null, null, null, null);
+                allColumns, null, null, null, null, orderBy);
 
 
         List<Coupon> coupons = new ArrayList<Coupon>();
@@ -191,5 +201,4 @@ public class MyDBHander extends SQLiteOpenHelper {
         db.close();
         return result;
     }
-
 }

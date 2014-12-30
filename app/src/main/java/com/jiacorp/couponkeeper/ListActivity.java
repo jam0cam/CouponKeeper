@@ -1,5 +1,7 @@
 package com.jiacorp.couponkeeper;
 
+import android.animation.Animator;
+import android.animation.AnimatorListenerAdapter;
 import android.content.Intent;
 import android.os.Bundle;
 import android.support.v7.app.ActionBarActivity;
@@ -33,7 +35,12 @@ public class ListActivity extends ActionBarActivity implements
         CHECK, DELETE, BOTH
     }
 
+    enum Sort {
+        EXP_DATE_ASC, NAME_ASC
+    }
+
     Mode mMode;
+    Sort mSort;
 
     @InjectView(R.id.lv)
     ListView mListView;
@@ -64,9 +71,7 @@ public class ListActivity extends ActionBarActivity implements
     @Override
     protected void onResume() {
         super.onResume();
-
-        Log.d(TAG, "onResume");
-        reloadCoupons();
+        fadeOutAndReloadCoupons(mListView);
     }
 
     @Override
@@ -86,8 +91,12 @@ public class ListActivity extends ActionBarActivity implements
             mMode = Mode.DELETE;
             mActionMode = mToolbar.startActionMode(ListActivity.this);
             mActionMode.setTitle(mListView.getCheckedItemCount() + " Selected");
-        } else {
-            throw new UnsupportedOperationException("Unsupported method");
+        } else if (item.getItemId() == R.id.action_sort_exp_soonest) {
+            mSort = Sort.EXP_DATE_ASC;
+            fadeOutAndReloadCoupons(mListView);
+        } else if (item.getItemId() == R.id.action_sort_coupon_name) {
+            mSort = Sort.NAME_ASC;
+            fadeOutAndReloadCoupons(mListView);
         }
 
         return super.onOptionsItemSelected(item);
@@ -102,10 +111,11 @@ public class ListActivity extends ActionBarActivity implements
     }
 
     private void reloadCoupons() {
-        mCoupons = mDbHandler.getAllCoupons();
+        mCoupons = mDbHandler.getAllCoupons(mSort);
         mListView.setChoiceMode(AbsListView.CHOICE_MODE_MULTIPLE);
         mAdapter = new ListAdapter(this, mCoupons);
         mListView.setAdapter(mAdapter);
+        fadeIn(mListView);
     }
 
     private void deleteCheckedItems() {
@@ -122,7 +132,7 @@ public class ListActivity extends ActionBarActivity implements
                 }
             }
 
-            reloadCoupons();
+            fadeOutAndReloadCoupons(mListView);
         }
     }
 
@@ -217,11 +227,6 @@ public class ListActivity extends ActionBarActivity implements
         }
 
         mActionMode.finish();
-
-        //reset the listview
-        mAdapter = new ListAdapter(this, mCoupons);
-        mListView.setAdapter(mAdapter);
-
         return true;
     }
 
@@ -232,5 +237,28 @@ public class ListActivity extends ActionBarActivity implements
         mActionMode = null;
         mListView.clearChoices();
         mAdapter.notifyDataSetChanged();
+    }
+
+    private void fadeIn(final View v) {
+        Log.d(TAG, "Fading in");
+        v.animate().alpha(1).setDuration(250).setListener(new AnimatorListenerAdapter() {
+            @Override
+            public void onAnimationStart(Animator animation) {
+                v.setVisibility(View.VISIBLE);
+                Log.d(TAG, "Done Fading in");
+            }
+        }).start();
+    }
+
+    private void fadeOutAndReloadCoupons(final View v) {
+        Log.d(TAG, "Fading out");
+        v.animate().alpha(0).setDuration(250).setListener(new AnimatorListenerAdapter() {
+            @Override
+            public void onAnimationEnd(Animator animation) {
+                v.setVisibility(View.GONE);
+                Log.d(TAG, "Done Fading out");
+                reloadCoupons();
+            }
+        }).start();
     }
 }

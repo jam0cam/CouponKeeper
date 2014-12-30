@@ -4,8 +4,9 @@ import android.app.DatePickerDialog;
 import android.content.ContentValues;
 import android.content.Intent;
 import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
+import android.graphics.Matrix;
 import android.graphics.PorterDuff;
+import android.media.ExifInterface;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
@@ -30,8 +31,11 @@ import android.widget.Toast;
 
 import com.jiacorp.couponkeeper.exceptions.DBException;
 import com.nostra13.universalimageloader.core.ImageLoader;
+import com.nostra13.universalimageloader.core.listener.SimpleImageLoadingListener;
+import com.squareup.picasso.Picasso;
 
 import java.io.File;
+import java.io.IOException;
 import java.text.DateFormat;
 import java.util.Arrays;
 import java.util.Calendar;
@@ -45,6 +49,8 @@ import butterknife.InjectView;
 
 public class CouponActivity extends ActionBarActivity {
 
+    private static final String TAG = CouponActivity.class.getName();
+    private static final String EXTRA_URI = "extra-uri";
     public static final String EXTRA_COUPON = "coupon";
 
     private static final int PICK_FROM_GALLERY = 1;
@@ -53,7 +59,6 @@ public class CouponActivity extends ActionBarActivity {
     private static final String SPACE_DELIMITER = "xxx";
     private static final String DATE_DELIMITER = "yyy";
 
-    private static final String TAG = CouponActivity.class.getName();
     @InjectView(R.id.et_company)
     EditText mCompany;
 
@@ -97,6 +102,7 @@ public class CouponActivity extends ActionBarActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        Log.d(TAG, "OnCreate");
         setContentView(R.layout.activity_coupon);
         ButterKnife.inject(this);
 
@@ -106,6 +112,14 @@ public class CouponActivity extends ActionBarActivity {
         mDateFormat = android.text.format.DateFormat.getDateFormat(this);
         Coupon coupon = (Coupon) getIntent().getSerializableExtra(EXTRA_COUPON);
         mDefaultCalendar = Calendar.getInstance();
+
+        if (savedInstanceState != null) {
+            mNewPhotoUri = savedInstanceState.getParcelable(EXTRA_URI);
+            if (mNewPhotoUri != null) {
+                Log.d(TAG, "Reloading uri: " + mNewPhotoUri.getPath());
+                displayCapturedImage();
+            }
+        }
 
         if (coupon != null) {
             mCoupon = coupon;
@@ -148,6 +162,29 @@ public class CouponActivity extends ActionBarActivity {
         });
     }
 
+    @Override
+    protected void onResume() {
+        Log.d(TAG, "onResume");
+        super.onResume();
+    }
+
+    @Override
+    protected void onPause() {
+        Log.d(TAG, "onPause");
+        super.onPause();
+
+
+        if (!isDeleted && checkCompletedFields()) {
+            save();
+        }
+    }
+
+    @Override
+    protected void onDestroy() {
+        Log.d(TAG, "onDestroy");
+        super.onDestroy();
+    }
+
     private void hideOverlay() {
         mImgMain.setColorFilter(null);
     }
@@ -160,7 +197,43 @@ public class CouponActivity extends ActionBarActivity {
         mTvDate.setText(mCoupon.expDateString);
         mEtCompany.setText(mCoupon.title);
 
-        mImageLoader.displayImage("file:///" + mCoupon.filePath, mImgMain);
+        Matrix matrix = new Matrix();
+
+        try {
+            ExifInterface exif = new ExifInterface(mCoupon.filePath);
+            int orientation = exif.getAttributeInt(ExifInterface.TAG_ORIENTATION, 1);
+
+            Log.d(TAG, "orientation value: " + orientation);
+
+            if (orientation == 3) {
+                matrix.postRotate(180);
+            } else if (orientation == 6) {
+                matrix.postRotate(90);
+            } else if (orientation == 8) {
+                matrix.postRotate(270);
+            } else {
+                matrix = null;
+            }
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        final Matrix finalMatrix = matrix;
+
+        mImageLoader.displayImage("file:///" + mCoupon.filePath, mImgMain, new SimpleImageLoadingListener() {
+            @Override
+            public void onLoadingComplete(String imageUri, View view, Bitmap bitmap) {
+                super.onLoadingComplete(imageUri, view, bitmap);
+
+                if (finalMatrix != null) {
+                    Bitmap rotatedBitmap = Bitmap.createBitmap(bitmap, 0, 0, bitmap.getWidth(), bitmap.getHeight(), finalMatrix, true);
+                    mImgMain.setImageBitmap(rotatedBitmap);
+                } else {
+                    mImgMain.setImageBitmap(bitmap);
+                }
+            }
+        });
 
         List<String> dates = Arrays.asList(mCoupon.expDateString.split("/"));
 
@@ -243,6 +316,16 @@ public class CouponActivity extends ActionBarActivity {
     }
 
     @Override
+    protected void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
+
+        if (mNewPhotoUri != null) {
+            Log.d(TAG, "Saving uri: " + mNewPhotoUri.getPath());
+            outState.putParcelable(EXTRA_URI, mNewPhotoUri);
+        }
+    }
+
+    @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
 
@@ -275,21 +358,27 @@ public class CouponActivity extends ActionBarActivity {
     }
 
     private void displayCapturedImage() {
-        try {
+//        try {
+//
+//            // bimatp factory
+//            BitmapFactory.Options options = new BitmapFactory.Options();
+//
+//            // downsizing image as it throws OutOfMemory Exception for larger images
+//            options.inSampleSize = 8;
+//
+//            Log.d(TAG, "displaying photo for path: " + mNewPhotoUri.getPath());
+//            final Bitmap bitmap = BitmapFactory.decodeFile(mNewPhotoUri.getPath(),options);
+//            mImgMain.setImageBitmap(bitmap);
+//        } catch (NullPointerException e) {
+//            e.printStackTrace();
+//        }
 
-            // bimatp factory
-            BitmapFactory.Options options = new BitmapFactory.Options();
-
-            // downsizing image as it throws OutOfMemory Exception for larger images
-            options.inSampleSize = 8;
-
-            Log.d(TAG, "photo saved in path: " + mNewPhotoUri.getPath());
-            final Bitmap bitmap = BitmapFactory.decodeFile(mNewPhotoUri.getPath(),options);
-            mImgMain.setImageBitmap(bitmap);
-        } catch (NullPointerException e) {
-            e.printStackTrace();
-        }
-
+        Log.d(TAG, "displaying photo for path: " + mNewPhotoUri.getPath());
+        Picasso.with(this)
+                .load(mNewPhotoUri)
+                .fit()
+                .centerInside()
+                .into(mImgMain);
     }
 
     /** Create a file Uri for saving an image or video */
@@ -338,15 +427,6 @@ public class CouponActivity extends ActionBarActivity {
         }
 
         return true;
-    }
-
-    @Override
-    protected void onPause() {
-        super.onPause();
-
-        if (!isDeleted && checkCompletedFields()) {
-            save();
-        }
     }
 
     public void save() {
