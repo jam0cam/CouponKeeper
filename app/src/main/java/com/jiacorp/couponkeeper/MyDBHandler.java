@@ -15,11 +15,11 @@ import java.util.List;
 /**
  * Created by jitse on 11/23/14.
  */
-public class MyDBHander extends SQLiteOpenHelper {
-    private static final String TAG = MyDBHander.class.getName();
+public class MyDBHandler extends SQLiteOpenHelper {
+    private static final String TAG = MyDBHandler.class.getName();
 
     private static final int DATABASE_VERSION = 1;
-    private static final String DATABASE_NAME = "jaicorp.coupon";
+    private static final String DATABASE_NAME = "jiacorp.coupon";
     public static final String TABLE_COUPONS = "coupon";
 
     public static final String COLUMN_ID = "_id";
@@ -37,7 +37,7 @@ public class MyDBHander extends SQLiteOpenHelper {
             COLUMN_IS_USED
     };
 
-    public MyDBHander(Context context, String name, SQLiteDatabase.CursorFactory factory, int version) {
+    public MyDBHandler(Context context, String name, SQLiteDatabase.CursorFactory factory, int version) {
         super(context, name, factory, version);
     }
 
@@ -124,9 +124,9 @@ public class MyDBHander extends SQLiteOpenHelper {
 
         if (sort != null) {
             if (sort == ListActivity.Sort.EXP_DATE_ASC) {
-                orderBy = COLUMN_EXP_DATE + " ASC";
+                orderBy = "date(" + COLUMN_EXP_DATE + ") ASC";
             } else if (sort == ListActivity.Sort.NAME_ASC) {
-                orderBy = COLUMN_TITLE + " ASC";
+                orderBy = "lower(" + COLUMN_TITLE + ")  ASC";
             }
         }
 

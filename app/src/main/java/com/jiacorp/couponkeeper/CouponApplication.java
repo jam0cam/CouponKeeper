@@ -14,14 +14,14 @@ import com.nostra13.universalimageloader.core.display.FadeInBitmapDisplayer;
  */
 public class CouponApplication extends Application {
 
-    MyDBHander mDbHandler;
+    MyDBHandler mDbHandler;
     ImageLoader mImageLoader;
 
     @Override
     public void onCreate() {
         super.onCreate();
 
-        mDbHandler = new MyDBHander(this, getString(R.string.db_name), null, 1);
+        mDbHandler = new MyDBHandler(this, getString(R.string.db_name), null, 1);
 
         DisplayImageOptions defaultOptions = new DisplayImageOptions.Builder()
                 .imageScaleType(ImageScaleType.IN_SAMPLE_INT)
@@ -57,9 +57,9 @@ public class CouponApplication extends Application {
         return mImageLoader;
     }
 
-    public MyDBHander getDbHandler() {
+    public MyDBHandler getDbHandler() {
         if (mDbHandler == null) {
-            mDbHandler = new MyDBHander(this, getString(R.string.db_name), null, 1);
+            mDbHandler = new MyDBHandler(this, getString(R.string.db_name), null, 1);
         }
         return mDbHandler;
     }

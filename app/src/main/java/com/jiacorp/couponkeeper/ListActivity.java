@@ -51,7 +51,7 @@ public class ListActivity extends ActionBarActivity implements
     @InjectView(R.id.btn_add)
     ImageButton mBtnAdd;
 
-    MyDBHander mDbHandler;
+    MyDBHandler mDbHandler;
     ListAdapter mAdapter;
     List<Coupon> mCoupons;
     ActionMode mActionMode;
@@ -71,7 +71,9 @@ public class ListActivity extends ActionBarActivity implements
     @Override
     protected void onResume() {
         super.onResume();
-        fadeOutAndReloadCoupons(mListView);
+        mListView.setAlpha(0);
+        mListView.setVisibility(View.GONE);
+        reloadCoupons();
     }
 
     @Override
@@ -86,11 +88,11 @@ public class ListActivity extends ActionBarActivity implements
         if (item.getItemId() == R.id.action_check) {
             mMode = Mode.CHECK;
             mActionMode = mToolbar.startActionMode(ListActivity.this);
-            mActionMode.setTitle(mListView.getCheckedItemCount() + " Selected");
+            mActionMode.setTitle(mListView.getCheckedItemCount() + " Selected to mark as used.");
         } else if (item.getItemId() == R.id.action_delete) {
             mMode = Mode.DELETE;
             mActionMode = mToolbar.startActionMode(ListActivity.this);
-            mActionMode.setTitle(mListView.getCheckedItemCount() + " Selected");
+            mActionMode.setTitle(mListView.getCheckedItemCount() + " Selected For delete");
         } else if (item.getItemId() == R.id.action_sort_exp_soonest) {
             mSort = Sort.EXP_DATE_ASC;
             fadeOutAndReloadCoupons(mListView);
@@ -240,7 +242,7 @@ public class ListActivity extends ActionBarActivity implements
     }
 
     private void fadeIn(final View v) {
-        Log.d(TAG, "Fading in");
+        Log.d(TAG, "Fading in,  visibility: " + v.getVisibility());
         v.animate().alpha(1).setDuration(250).setListener(new AnimatorListenerAdapter() {
             @Override
             public void onAnimationStart(Animator animation) {

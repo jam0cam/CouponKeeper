@@ -92,7 +92,7 @@ public class CouponActivity extends ActionBarActivity {
 
     Coupon mCoupon;
 
-    MyDBHander mDbHandler;
+    MyDBHandler mDbHandler;
 
     Calendar mDefaultCalendar;
     boolean mIsEditMode = false;
