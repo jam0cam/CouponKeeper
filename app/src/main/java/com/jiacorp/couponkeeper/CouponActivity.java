@@ -1,7 +1,9 @@
 package com.jiacorp.couponkeeper;
 
+import android.app.AlertDialog;
 import android.app.DatePickerDialog;
 import android.content.ContentValues;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.Matrix;
@@ -92,6 +94,7 @@ public class CouponActivity extends ActionBarActivity {
     RelativeLayout mRelativeLayout;
 
     boolean mImageSelected = false;
+    boolean mHasImage = false;
 
     Uri mNewPhotoUri;
     Uri mSelectedImageUri;
@@ -141,6 +144,7 @@ public class CouponActivity extends ActionBarActivity {
             String date = mDateFormat.format(new Date());
             mTvDate.setText(date);
             mImgMain.setImageDrawable(getResources().getDrawable(R.drawable.no_image));
+            mHasImage = false;
         }
 
         mDbHandler = ((CouponApplication)getApplication()).getDbHandler();
@@ -175,14 +179,43 @@ public class CouponActivity extends ActionBarActivity {
     }
 
     @Override
-    protected void onPause() {
-        Log.d(TAG, "onPause");
-        super.onPause();
-
+    public void onBackPressed() {
 
         if (!isDeleted && checkCompletedFields()) {
             save();
+        } else if (!mHasImage && TextUtils.isEmpty(mEtTitle.getText().toString())) {
+            //if it doesn't have an image, and it doesn't have a title, then we can just let it go back.
+        } else if (!isDeleted && !checkCompletedFields()) {
+            showAlert();
+            return;
         }
+
+        super.onBackPressed();
+    }
+
+    private void showAlert() {
+
+        AlertDialog dialog = new AlertDialog.Builder(this).setMessage(R.string.alert_changes_not_saved)
+                .setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
+
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        dialog.dismiss();
+                        finish();
+                    }
+                }).setNegativeButton(android.R.string.no, new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        dialog.dismiss();
+                    }
+                }).setOnCancelListener(new DialogInterface.OnCancelListener() {
+
+                    @Override
+                    public void onCancel(DialogInterface dialog) {
+                        dialog.dismiss();
+                    }
+                }).create();
+        dialog.show();
     }
 
     @Override
@@ -238,6 +271,8 @@ public class CouponActivity extends ActionBarActivity {
                 } else {
                     mImgMain.setImageBitmap(bitmap);
                 }
+
+                mHasImage = true;
             }
         });
 
@@ -341,6 +376,7 @@ public class CouponActivity extends ActionBarActivity {
             if (mSelectedImageUri != null) {
                 mImgMain.setImageURI(mSelectedImageUri);
                 mImageSelected = true;
+                mHasImage = true;
             }
         } else if (requestCode == CAMERA) {
             if (resultCode == RESULT_OK) {
@@ -386,6 +422,8 @@ public class CouponActivity extends ActionBarActivity {
 
                     }
                 });
+
+        mHasImage = true;
     }
 
     /** Create a file Uri for saving an image or video */
@@ -432,7 +470,6 @@ public class CouponActivity extends ActionBarActivity {
         if (!mImageSelected && mNewPhotoUri == null && !mIsEditMode) {
             return false;
         }
-
         return true;
     }
 
