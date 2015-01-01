@@ -5,19 +5,18 @@ import android.animation.AnimatorListenerAdapter;
 import android.content.Intent;
 import android.os.Bundle;
 import android.support.v7.app.ActionBarActivity;
+import android.support.v7.widget.DefaultItemAnimator;
+import android.support.v7.widget.LinearLayoutManager;
+import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
-import android.util.SparseBooleanArray;
 import android.view.ActionMode;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
-import android.widget.AbsListView;
 import android.widget.ImageButton;
-import android.widget.ListView;
 
-import java.io.File;
 import java.util.List;
 
 import butterknife.ButterKnife;
@@ -42,17 +41,17 @@ public class ListActivity extends ActionBarActivity implements
     Mode mMode;
     Sort mSort;
 
-    @InjectView(R.id.lv)
-    ListView mListView;
-
     @InjectView(R.id.toolbar)
     Toolbar mToolbar;
+
+    @InjectView(R.id.recycler_view)
+    RecyclerView mRecyclerView;
 
     @InjectView(R.id.btn_add)
     ImageButton mBtnAdd;
 
     MyDBHandler mDbHandler;
-    ListAdapter mAdapter;
+    MyRecyclerAdapter mAdapter;
     List<Coupon> mCoupons;
     ActionMode mActionMode;
 
@@ -66,13 +65,18 @@ public class ListActivity extends ActionBarActivity implements
         setSupportActionBar(mToolbar);
 
         mDbHandler = ((CouponApplication)getApplication()).getDbHandler();
+
+        mRecyclerView = (RecyclerView) findViewById(R.id.recycler_view);
+        mRecyclerView.setHasFixedSize(true);
+        mRecyclerView.setLayoutManager(new LinearLayoutManager(this));
+        mRecyclerView.setItemAnimator(new DefaultItemAnimator());
     }
 
     @Override
     protected void onResume() {
         super.onResume();
-        mListView.setAlpha(0);
-        mListView.setVisibility(View.GONE);
+        mRecyclerView.setAlpha(0);
+        mRecyclerView.setVisibility(View.GONE);
         reloadCoupons();
     }
 
@@ -88,23 +92,21 @@ public class ListActivity extends ActionBarActivity implements
         if (item.getItemId() == R.id.action_check) {
             mMode = Mode.CHECK;
             mActionMode = mToolbar.startActionMode(ListActivity.this);
-            mActionMode.setTitle(mListView.getCheckedItemCount() + " Selected to mark as used.");
+            mActionMode.setTitle(mAdapter.getItemCount() + " Selected to mark as used.");
         } else if (item.getItemId() == R.id.action_delete) {
             mMode = Mode.DELETE;
             mActionMode = mToolbar.startActionMode(ListActivity.this);
-            mActionMode.setTitle(mListView.getCheckedItemCount() + " Selected For delete");
+            mActionMode.setTitle(mAdapter.getItemCount() + " Selected For delete");
         } else if (item.getItemId() == R.id.action_sort_exp_soonest) {
             mSort = Sort.EXP_DATE_ASC;
-            fadeOutAndReloadCoupons(mListView);
+            fadeOutAndReloadCoupons(mRecyclerView);
         } else if (item.getItemId() == R.id.action_sort_coupon_name) {
             mSort = Sort.NAME_ASC;
-            fadeOutAndReloadCoupons(mListView);
+            fadeOutAndReloadCoupons(mRecyclerView);
         }
 
         return super.onOptionsItemSelected(item);
     }
-
-
 
     @OnClick(R.id.btn_add)
     public void addClicked() {
@@ -112,43 +114,37 @@ public class ListActivity extends ActionBarActivity implements
         startActivity(intent);
     }
 
+    private void myToggleSelection(int idx) {
+        mAdapter.toggleSelection(idx);
+        String title = mAdapter.getSelectedItemCount() + " Selected.";
+        mActionMode.setTitle(title);
+    }
+
     private void reloadCoupons() {
         mCoupons = mDbHandler.getAllCoupons(mSort);
-        mListView.setChoiceMode(AbsListView.CHOICE_MODE_MULTIPLE);
-        mAdapter = new ListAdapter(this, mCoupons);
-        mListView.setAdapter(mAdapter);
-        fadeIn(mListView);
+        mAdapter = new MyRecyclerAdapter(mCoupons, this);
+        mRecyclerView.setAdapter(mAdapter);
+
+        fadeIn(mRecyclerView);
     }
 
     private void deleteCheckedItems() {
-        SparseBooleanArray checkedItems = mListView.getCheckedItemPositions();
-        if (checkedItems != null) {
-            for (int i=0; i<checkedItems.size(); i++) {
-                if (checkedItems.valueAt(i)) {
-                    Coupon c = mCoupons.get(checkedItems.keyAt(i));
-                    Log.d(TAG, "deleting " + c.title + " file");
-                    mDbHandler.deleteCoupon(c.id);
-
-                    File f = new File(c.filePath);
-                    f.delete();
-                }
-            }
-
-            fadeOutAndReloadCoupons(mListView);
+        List<Integer> selectedItemPositions = mAdapter.getSelectedItems();
+        for (int i = selectedItemPositions.size() - 1; i >= 0; i--) {
+            Coupon c = mCoupons.get(selectedItemPositions.get(i));
+            mAdapter.removeData(selectedItemPositions.get(i));
+            mDbHandler.deleteCoupon(c.id);
         }
     }
 
     private void markCheckedItems() {
-        SparseBooleanArray checkedItems = mListView.getCheckedItemPositions();
-        if (checkedItems != null) {
-            for (int i=0; i<checkedItems.size(); i++) {
-                if (checkedItems.valueAt(i)) {
-                    Coupon c = mCoupons.get(checkedItems.keyAt(i));
-                    c.used = true;
-                    Log.d(TAG, "Marking " + c.title + " as used.");
-                    mDbHandler.updateCoupon(c);
-                }
-            }
+        List<Integer> selectedItems = mAdapter.getSelectedItems();
+
+        for (int i : selectedItems) {
+            Coupon c = mCoupons.get(i);
+            c.used = true;
+            Log.d(TAG, "Marking " + c.title + " as used.");
+            mDbHandler.updateCoupon(c);
         }
     }
 
@@ -157,14 +153,8 @@ public class ListActivity extends ActionBarActivity implements
     public void onClick(View v) {
         Log.d(TAG, "onClick");
         if (mActionMode != null) {
-            v.setSelected(true);
-
-            Coupon c = (Coupon) v.getTag();
-            int selectedItem = mCoupons.indexOf(c);
-            boolean toVal = !mListView.isItemChecked(selectedItem);
-            mListView.setItemChecked(selectedItem, toVal);
-            Log.d(TAG, "Setting check to " + toVal + "  for index:" + selectedItem + "  There are " + mListView.getCheckedItemCount() + " checked items");
-            mActionMode.setTitle(mListView.getCheckedItemCount() + " Selected");
+            int idx = mRecyclerView.getChildPosition(v);
+            myToggleSelection(idx);
         } else {
             Coupon c = (Coupon) v.getTag();
             Intent intent = new Intent(this, CouponActivity.class);
@@ -175,24 +165,15 @@ public class ListActivity extends ActionBarActivity implements
 
     @Override
     public boolean onLongClick(View v) {
-        Log.d(TAG, "onLongClick");
-        Coupon c = (Coupon) v.getTag();
-        int selectedItem = mCoupons.indexOf(c);
-
-        if (mActionMode == null) {
-            // Start the CAB using the ActionMode.Callback defined above
-            mMode = Mode.BOTH;
-            mActionMode = mToolbar.startActionMode(ListActivity.this);
-            Log.d(TAG, "started action mode");
+        if (mActionMode != null) {
+            return false;
         }
 
-        v.setSelected(true);
+        mMode = Mode.BOTH;
 
-        boolean toVal = !mListView.isItemChecked(selectedItem);
-        mListView.setItemChecked(selectedItem, toVal);
-        Log.d(TAG, "Setting check to " + toVal + "  for index:" + selectedItem + "  There are " + mListView.getCheckedItemCount() + " checked items");
-        mActionMode.setTitle(mListView.getCheckedItemCount() + " Selected");
-
+        mActionMode = mToolbar.startActionMode(ListActivity.this);
+        int idx = mRecyclerView.getChildPosition(v);
+        myToggleSelection(idx);
         return true;
     }
 
@@ -237,8 +218,7 @@ public class ListActivity extends ActionBarActivity implements
         Log.d(TAG, "Clearing all the choices");
 
         mActionMode = null;
-        mListView.clearChoices();
-        mAdapter.notifyDataSetChanged();
+        mAdapter.clearSelections();
     }
 
     private void fadeIn(final View v) {

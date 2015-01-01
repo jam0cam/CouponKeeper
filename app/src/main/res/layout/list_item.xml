@@ -7,6 +7,8 @@
     android:foreground="?android:attr/selectableItemBackground"
     app:cardElevation="@dimen/low_elevation"
     android:clickable="true"
+    android:background="@drawable/activated_background"
+    android:layout_margin="@dimen/half_padding"
     >
 
     <LinearLayout
