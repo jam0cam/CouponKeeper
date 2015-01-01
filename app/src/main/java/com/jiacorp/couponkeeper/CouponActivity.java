@@ -10,6 +10,7 @@ import android.media.ExifInterface;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
+import android.os.Handler;
 import android.provider.MediaStore;
 import android.support.v7.app.ActionBarActivity;
 import android.support.v7.widget.Toolbar;
@@ -25,6 +26,7 @@ import android.widget.EditText;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.RelativeLayout;
+import android.widget.ScrollView;
 import android.widget.Switch;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -32,6 +34,7 @@ import android.widget.Toast;
 import com.jiacorp.couponkeeper.exceptions.DBException;
 import com.nostra13.universalimageloader.core.ImageLoader;
 import com.nostra13.universalimageloader.core.listener.SimpleImageLoadingListener;
+import com.squareup.picasso.Callback;
 import com.squareup.picasso.Picasso;
 
 import java.io.File;
@@ -59,6 +62,9 @@ public class CouponActivity extends ActionBarActivity {
     private static final String SPACE_DELIMITER = "xxx";
     private static final String DATE_DELIMITER = "yyy";
 
+    @InjectView(R.id.scroll_view)
+    ScrollView mScrollView;
+
     @InjectView(R.id.et_company)
     EditText mCompany;
 
@@ -69,7 +75,7 @@ public class CouponActivity extends ActionBarActivity {
     TextView mTvDate;
 
     @InjectView(R.id.et_company)
-    EditText mEtCompany;
+    EditText mEtTitle;
 
     @InjectView(R.id.mark_as_used)
     Switch mMarkAsUsed;
@@ -195,7 +201,7 @@ public class CouponActivity extends ActionBarActivity {
 
     private void initializeWithCoupon() {
         mTvDate.setText(mCoupon.expDateString);
-        mEtCompany.setText(mCoupon.title);
+        mEtTitle.setText(mCoupon.title);
 
         Matrix matrix = new Matrix();
 
@@ -338,10 +344,6 @@ public class CouponActivity extends ActionBarActivity {
             }
         } else if (requestCode == CAMERA) {
             if (resultCode == RESULT_OK) {
-
-                // successfully captured the image
-                // display it in image view
-
                 displayCapturedImage();
             } else if (resultCode == RESULT_CANCELED) {
 
@@ -357,28 +359,33 @@ public class CouponActivity extends ActionBarActivity {
         }
     }
 
-    private void displayCapturedImage() {
-//        try {
-//
-//            // bimatp factory
-//            BitmapFactory.Options options = new BitmapFactory.Options();
-//
-//            // downsizing image as it throws OutOfMemory Exception for larger images
-//            options.inSampleSize = 8;
-//
-//            Log.d(TAG, "displaying photo for path: " + mNewPhotoUri.getPath());
-//            final Bitmap bitmap = BitmapFactory.decodeFile(mNewPhotoUri.getPath(),options);
-//            mImgMain.setImageBitmap(bitmap);
-//        } catch (NullPointerException e) {
-//            e.printStackTrace();
-//        }
+    private void scrollToTitle() {
+        mEtTitle.requestFocus();
+        new Handler().post(new Runnable() {
+            @Override
+            public void run() {
+                mScrollView.scrollTo(0, mTvDate.getBottom());
+            }
+        });
+    }
 
+    private void displayCapturedImage() {
         Log.d(TAG, "displaying photo for path: " + mNewPhotoUri.getPath());
         Picasso.with(this)
                 .load(mNewPhotoUri)
                 .fit()
                 .centerInside()
-                .into(mImgMain);
+                .into(mImgMain, new Callback() {
+                    @Override
+                    public void onSuccess() {
+                        scrollToTitle();
+                    }
+
+                    @Override
+                    public void onError() {
+
+                    }
+                });
     }
 
     /** Create a file Uri for saving an image or video */
@@ -414,7 +421,7 @@ public class CouponActivity extends ActionBarActivity {
      * If all fields are filled out, then we will enable the save button. Otherwise, disable it.
      */
     private boolean checkCompletedFields() {
-        if (TextUtils.isEmpty(mEtCompany.getText().toString())) {
+        if (TextUtils.isEmpty(mEtTitle.getText().toString())) {
             return false;
         }
 
@@ -430,7 +437,7 @@ public class CouponActivity extends ActionBarActivity {
     }
 
     public void save() {
-        Log.d(TAG, "title:" + mEtCompany.getText().toString());
+        Log.d(TAG, "title:" + mEtTitle.getText().toString());
         Log.d(TAG, "Expiration Date:" + mTvDate.getText().toString());
 
         String path = "";
@@ -445,7 +452,7 @@ public class CouponActivity extends ActionBarActivity {
         if (mIsEditMode) {
             String oldPath = null;
 
-            mCoupon.title = mEtCompany.getText().toString();
+            mCoupon.title = mEtTitle.getText().toString();
             mCoupon.expDateString = mTvDate.getText().toString();
             mCoupon.used = mMarkAsUsed.isChecked();
 
@@ -467,7 +474,7 @@ public class CouponActivity extends ActionBarActivity {
             finish();
         } else {
             //rename the path to have proper convention, then save
-            mCoupon = new Coupon(mEtCompany.getText().toString(), mTvDate.getText().toString(), path, mMarkAsUsed.isChecked());
+            mCoupon = new Coupon(mEtTitle.getText().toString(), mTvDate.getText().toString(), path, mMarkAsUsed.isChecked());
             //rename the path to have proper convention, then save
             renameFile(mCoupon, path);
 
