@@ -67,6 +67,7 @@
                     android:layout_below="@id/tv_title"
                     android:hint="Company"
                     android:singleLine="true"
+                    android:inputType="textCapSentences"
                     />
                 <Switch
                     android:id="@+id/mark_as_used"
