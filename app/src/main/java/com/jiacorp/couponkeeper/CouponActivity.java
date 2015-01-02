@@ -56,6 +56,7 @@ public class CouponActivity extends ActionBarActivity {
     private static final String TAG = CouponActivity.class.getName();
     private static final String EXTRA_URI = "extra-uri";
     public static final String EXTRA_COUPON = "coupon";
+    public static final String EXTRA_DB_ACTION = "db-action";
 
     private static final int SELECT_PICTURE = 3;
 
@@ -227,7 +228,7 @@ public class CouponActivity extends ActionBarActivity {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
                         dialog.dismiss();
-                        finish();
+                        finishAfterCancel();
                     }
                 }).setNegativeButton(android.R.string.no, new DialogInterface.OnClickListener() {
                     @Override
@@ -355,7 +356,7 @@ public class CouponActivity extends ActionBarActivity {
             }
 
             isDeleted = true;
-            finish();
+            finishAfterDelete();
         }
 
         return super.onOptionsItemSelected(item);
@@ -506,7 +507,34 @@ public class CouponActivity extends ActionBarActivity {
             return newUri.getPath();
         }
     }
+    private void finishAfterUpdate() {
+        Intent intent = new Intent();
+        intent.putExtra(EXTRA_COUPON, mCoupon);
+        intent.putExtra(EXTRA_DB_ACTION, DbAction.UPDATE);
+        this.setResult(RESULT_OK, intent);
+        finish();
+    }
 
+    private void finishAfterAdd() {
+        Intent intent = new Intent();
+        intent.putExtra(EXTRA_COUPON, mCoupon);
+        intent.putExtra(EXTRA_DB_ACTION, DbAction.ADD);
+        this.setResult(RESULT_OK, intent);
+        finish();
+    }
+
+    private void finishAfterDelete() {
+        Intent intent = this.getIntent();
+        intent.putExtra(EXTRA_DB_ACTION, DbAction.DELETE);
+        this.setResult(RESULT_OK, intent);
+        finish();
+    }
+
+    private void finishAfterCancel() {
+        Intent intent = this.getIntent();
+        this.setResult(RESULT_CANCELED, intent);
+        finish();
+    }
 
     public void save() {
         Log.d(TAG, "title:" + mEtTitle.getText().toString());
@@ -531,8 +559,7 @@ public class CouponActivity extends ActionBarActivity {
             }
 
             mDbHandler.updateCoupon(mCoupon);
-            finish();
-
+            finishAfterUpdate();
 
         } else {
             //rename the path to have proper convention, then save
@@ -540,9 +567,10 @@ public class CouponActivity extends ActionBarActivity {
 
             try {
                 mDbHandler.addCoupon(mCoupon);
-                finish();
+                finishAfterAdd();
             } catch (DBException e) {
                 Toast.makeText(this, "Cannot save coupon", Toast.LENGTH_SHORT).show();
+                Log.e(TAG, "Cannot save coupon");
                 e.printStackTrace();
             }
         }

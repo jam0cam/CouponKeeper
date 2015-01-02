@@ -52,12 +52,15 @@ public class ListActivity extends ActionBarActivity implements
 
     MyDBHandler mDbHandler;
     MyRecyclerAdapter mAdapter;
+    LinearLayoutManager mLinearLayoutManager;
     List<Coupon> mCoupons;
+    Coupon mSelectedCoupon;
     ActionMode mActionMode;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        Log.d(TAG, "onCreate");
         setContentView(R.layout.activity_list);
 
         ButterKnife.inject(this);
@@ -68,16 +71,15 @@ public class ListActivity extends ActionBarActivity implements
 
         mRecyclerView = (RecyclerView) findViewById(R.id.recycler_view);
         mRecyclerView.setHasFixedSize(true);
-        mRecyclerView.setLayoutManager(new LinearLayoutManager(this));
-        mRecyclerView.setItemAnimator(new DefaultItemAnimator());
-    }
 
-    @Override
-    protected void onResume() {
-        super.onResume();
+        mLinearLayoutManager = new LinearLayoutManager(this);
+        mRecyclerView.setLayoutManager(mLinearLayoutManager);
+        mRecyclerView.setItemAnimator(new DefaultItemAnimator());
+
         mRecyclerView.setAlpha(0);
         mRecyclerView.setVisibility(View.GONE);
         reloadCoupons();
+
     }
 
     @Override
@@ -108,10 +110,36 @@ public class ListActivity extends ActionBarActivity implements
         return super.onOptionsItemSelected(item);
     }
 
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        Log.d(TAG, "onActivityResult");
+
+        super.onActivityResult(requestCode, resultCode, data);
+
+        if (resultCode == RESULT_OK) {
+            DbAction action = (DbAction) data.getSerializableExtra(CouponActivity.EXTRA_DB_ACTION);
+            Coupon coupon = (Coupon) data.getSerializableExtra(CouponActivity.EXTRA_COUPON);
+
+            if (action == DbAction.ADD) {
+                mCoupons.add(coupon);
+                mAdapter.notifyItemInserted(mCoupons.size() - 1);
+                mRecyclerView.scrollToPosition(mCoupons.size() - 1);
+            } else if (action ==  DbAction.UPDATE) {
+                int index = mCoupons.indexOf(mSelectedCoupon);
+                mSelectedCoupon.copyFrom(coupon);
+                mAdapter.notifyItemChanged(index);
+            } else if (action == DbAction.DELETE) {
+                int index = mCoupons.indexOf(mSelectedCoupon);
+                mCoupons.remove(mSelectedCoupon);
+                mAdapter.notifyItemRemoved(index);
+            }
+        }
+    }
+
     @OnClick(R.id.btn_add)
     public void addClicked() {
         Intent intent = new Intent(this, CouponActivity.class);
-        startActivity(intent);
+        startActivityForResult(intent, 1);
     }
 
     private void myToggleSelection(int idx) {
@@ -159,7 +187,8 @@ public class ListActivity extends ActionBarActivity implements
             Coupon c = (Coupon) v.getTag();
             Intent intent = new Intent(this, CouponActivity.class);
             intent.putExtra(CouponActivity.EXTRA_COUPON, c);
-            startActivity(intent);
+            mSelectedCoupon = c;
+            startActivityForResult(intent, 1);
         }
     }
 

@@ -113,6 +113,8 @@ public class MyDBHandler extends SQLiteOpenHelper {
         if (result == -1) {
             Log.d(TAG, "Issue adding coupon");
             throw new DBException("There was an issue inserting the record.");
+        } else {
+            coupon.id = String.valueOf(result);
         }
     }
 
