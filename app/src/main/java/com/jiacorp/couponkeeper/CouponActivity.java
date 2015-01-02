@@ -2,9 +2,9 @@ package com.jiacorp.couponkeeper;
 
 import android.app.AlertDialog;
 import android.app.DatePickerDialog;
-import android.content.ContentValues;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.Matrix;
 import android.graphics.PorterDuff;
@@ -46,7 +46,6 @@ import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
-import java.util.UUID;
 
 import butterknife.ButterKnife;
 import butterknife.InjectView;
@@ -58,11 +57,12 @@ public class CouponActivity extends ActionBarActivity {
     private static final String EXTRA_URI = "extra-uri";
     public static final String EXTRA_COUPON = "coupon";
 
-    private static final int PICK_FROM_GALLERY = 1;
-    private static final int CAMERA = 2;
+    private static final int SELECT_PICTURE = 3;
+
     private static final String TOKEN_DELIMITER = "kkk";
     private static final String SPACE_DELIMITER = "xxx";
     private static final String DATE_DELIMITER = "yyy";
+
 
     @InjectView(R.id.scroll_view)
     ScrollView mScrollView;
@@ -93,11 +93,9 @@ public class CouponActivity extends ActionBarActivity {
     @InjectView(R.id.relative_layout)
     RelativeLayout mRelativeLayout;
 
-    boolean mImageSelected = false;
-    boolean mHasImage = false;
-
     Uri mNewPhotoUri;
     Uri mSelectedImageUri;
+    Uri mDisplayedUri;
 
     Coupon mCoupon;
 
@@ -126,7 +124,7 @@ public class CouponActivity extends ActionBarActivity {
             mNewPhotoUri = savedInstanceState.getParcelable(EXTRA_URI);
             if (mNewPhotoUri != null) {
                 Log.d(TAG, "Reloading uri: " + mNewPhotoUri.getPath());
-                displayCapturedImage();
+                displayCapturedImage(mNewPhotoUri);
             }
         }
 
@@ -141,10 +139,11 @@ public class CouponActivity extends ActionBarActivity {
             }
 
         } else {
+            mCoupon = new Coupon();
             String date = mDateFormat.format(new Date());
             mTvDate.setText(date);
             mImgMain.setImageDrawable(getResources().getDrawable(R.drawable.no_image));
-            mHasImage = false;
+            mDisplayedUri = null;
         }
 
         mDbHandler = ((CouponApplication)getApplication()).getDbHandler();
@@ -170,6 +169,33 @@ public class CouponActivity extends ActionBarActivity {
                 }
             }
         });
+
+        mImgMain.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                showImagePicker();
+            }
+        });
+    }
+
+    private void showImagePicker() {
+
+        Intent pickIntent = new Intent(Intent.ACTION_PICK);
+        pickIntent.setType("image/*");
+
+
+        Intent takePhotoIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
+
+        mNewPhotoUri = getOutputMediaFileUri();
+
+        // specifying path to save image
+        takePhotoIntent.putExtra(MediaStore.EXTRA_OUTPUT, mNewPhotoUri);
+
+        String pickTitle = "Select or take a new Picture";
+        Intent chooserIntent = Intent.createChooser(pickIntent, pickTitle);
+        chooserIntent.putExtra(Intent.EXTRA_INITIAL_INTENTS, new Intent[] { takePhotoIntent });
+
+        startActivityForResult(chooserIntent, SELECT_PICTURE);
     }
 
     @Override
@@ -183,7 +209,7 @@ public class CouponActivity extends ActionBarActivity {
 
         if (!isDeleted && checkCompletedFields()) {
             save();
-        } else if (!mHasImage && TextUtils.isEmpty(mEtTitle.getText().toString())) {
+        } else if (mDisplayedUri == null && TextUtils.isEmpty(mEtTitle.getText().toString())) {
             //if it doesn't have an image, and it doesn't have a title, then we can just let it go back.
         } else if (!isDeleted && !checkCompletedFields()) {
             showAlert();
@@ -260,6 +286,7 @@ public class CouponActivity extends ActionBarActivity {
 
         final Matrix finalMatrix = matrix;
 
+        //TODO: JIA: convert to picasso
         mImageLoader.displayImage("file:///" + mCoupon.filePath, mImgMain, new SimpleImageLoadingListener() {
             @Override
             public void onLoadingComplete(String imageUri, View view, Bitmap bitmap) {
@@ -272,13 +299,13 @@ public class CouponActivity extends ActionBarActivity {
                     mImgMain.setImageBitmap(bitmap);
                 }
 
-                mHasImage = true;
+                mDisplayedUri = Uri.parse("file:///" + mCoupon.filePath);
             }
         });
 
         List<String> dates = Arrays.asList(mCoupon.expDateString.split("/"));
 
-        mDefaultCalendar.set(Integer.parseInt(dates.get(2)), Integer.parseInt(dates.get(0))-1, Integer.parseInt(dates.get(1)));
+        mDefaultCalendar.set(Integer.parseInt(dates.get(2)), Integer.parseInt(dates.get(0)) - 1, Integer.parseInt(dates.get(1)));
     }
 
     private void showCalendar() {
@@ -307,30 +334,8 @@ public class CouponActivity extends ActionBarActivity {
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
-
-//        if (item.getItemId() == R.id.action_attach) {
-//            //TODO: JIA: enable this option by adding it in the menu
-//            Intent photoPickerIntent = new Intent(Intent.ACTION_PICK);
-//            photoPickerIntent.setType("image/*");
-//            startActivityForResult(photoPickerIntent, PICK_FROM_GALLERY);
-//        } else
-
-        if (item.getItemId() == R.id.action_camera) {
-            Intent intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
-
-            // create a file to save image
-            String imageFileName= UUID.randomUUID().toString() + ".jpg";
-            ContentValues contentValues=new ContentValues();
-            contentValues.put(MediaStore.Images.Media.TITLE, imageFileName);
-            mNewPhotoUri = getOutputMediaFileUri();
-
-            // specifying path to save image
-            intent.putExtra(MediaStore.EXTRA_OUTPUT, mNewPhotoUri);
-
-            // starting the image capture Intent
-            startActivityForResult(intent, CAMERA);
-        } else if (item.getItemId() == R.id.action_delete) {
-            if (mCoupon == null || TextUtils.isEmpty(mCoupon.id)) {
+        if (item.getItemId() == R.id.action_delete) {
+            if (TextUtils.isEmpty(mCoupon.id)) {
                 //this coupon haven't been saved yet. Just exit activity
                 finish();
                 return true;
@@ -370,28 +375,23 @@ public class CouponActivity extends ActionBarActivity {
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
 
-        if (requestCode == PICK_FROM_GALLERY) {
-
-            mSelectedImageUri = data.getData();
-            if (mSelectedImageUri != null) {
-                mImgMain.setImageURI(mSelectedImageUri);
-                mImageSelected = true;
-                mHasImage = true;
-            }
-        } else if (requestCode == CAMERA) {
-            if (resultCode == RESULT_OK) {
-                displayCapturedImage();
-            } else if (resultCode == RESULT_CANCELED) {
-
-                mNewPhotoUri = null;
-                Toast.makeText(getApplicationContext(), "User cancelled image capture", Toast.LENGTH_SHORT).show();
-
+        if (resultCode == RESULT_OK) {
+            if (data == null) {
+                displayCapturedImage(mNewPhotoUri);
+                mSelectedImageUri = null;
             } else {
-                mNewPhotoUri = null;
-                // failed to capture image
-                Toast.makeText(getApplicationContext(),"Sorry! Failed to capture image", Toast.LENGTH_SHORT).show();
+                //this is when the user attaches an image already saved on the phone.
+                mSelectedImageUri = data.getData();
+                if (mSelectedImageUri != null) {
+                    displayCapturedImage(mSelectedImageUri);
+                }
 
+                mNewPhotoUri = null;
             }
+        } else {
+            mNewPhotoUri = null;
+            mSelectedImageUri = null;
+            Toast.makeText(getApplicationContext(), "User cancelled image capture", Toast.LENGTH_SHORT).show();
         }
     }
 
@@ -405,10 +405,10 @@ public class CouponActivity extends ActionBarActivity {
         });
     }
 
-    private void displayCapturedImage() {
-        Log.d(TAG, "displaying photo for path: " + mNewPhotoUri.getPath());
+    private void displayCapturedImage(Uri uri) {
+        Log.d(TAG, "displaying photo for path: " + uri.getPath());
         Picasso.with(this)
-                .load(mNewPhotoUri)
+                .load(uri)
                 .fit()
                 .centerInside()
                 .into(mImgMain, new Callback() {
@@ -423,7 +423,7 @@ public class CouponActivity extends ActionBarActivity {
                     }
                 });
 
-        mHasImage = true;
+        mDisplayedUri = uri;
     }
 
     /** Create a file Uri for saving an image or video */
@@ -467,53 +467,76 @@ public class CouponActivity extends ActionBarActivity {
             return false;
         }
 
-        if (!mImageSelected && mNewPhotoUri == null && !mIsEditMode) {
+        if (mDisplayedUri == null) {    //there is no image being displayed
             return false;
         }
         return true;
     }
 
+    public String getPath(Uri uri) {
+        String[] projection = { MediaStore.Images.Media.DATA };
+        Cursor cursor = managedQuery(uri, projection, null, null, null);
+        startManagingCursor(cursor);
+        int column_index = cursor.getColumnIndexOrThrow(MediaStore.Images.Media.DATA);
+        cursor.moveToFirst();
+        return cursor.getString(column_index);
+    }
+
+    /**
+     * This method gets the file into the correct directory, and return that path. This assumes
+     * there is an image being displayed
+     */
+    private String finalizedFileAndGetPath() {
+        if (mDisplayedUri.getPath().contains(getResources().getString(R.string.app_name))) {
+            //this is already in the correct place.
+            return mDisplayedUri.getPath();
+        } else {
+            //This is likely a photo that was attached. We need to move it to the correct place.
+            Uri newUri = getOutputMediaFileUri();
+            String fullPath = getPath(mDisplayedUri);
+            Log.d(TAG, "Attachment is actually located:" + fullPath);
+            File src = new File(fullPath);
+
+            try {
+                Util.copy(src, new File(newUri.getPath()));
+            } catch (IOException e) {
+                Log.e(TAG, "Cannot copy attachment file from " + src.getPath() + " to " + newUri.getPath());
+                e.printStackTrace();
+            }
+            return newUri.getPath();
+        }
+    }
+
+
     public void save() {
         Log.d(TAG, "title:" + mEtTitle.getText().toString());
         Log.d(TAG, "Expiration Date:" + mTvDate.getText().toString());
 
-        String path = "";
-        if (mNewPhotoUri != null) {
-            path = mNewPhotoUri.getPath();
-            Log.d(TAG, "PATH:" + mNewPhotoUri.getPath());
-        } else if (mSelectedImageUri != null) {
-            path = mSelectedImageUri.getPath();
-            Log.d(TAG, "PATH:" + mSelectedImageUri.getPath());
-        }
+        String pathToSave = finalizedFileAndGetPath();
+        mCoupon.title = mEtTitle.getText().toString();
+        mCoupon.expDateString = mTvDate.getText().toString();
+        mCoupon.used = mMarkAsUsed.isChecked();
 
         if (mIsEditMode) {
-            String oldPath = null;
+            //if the new path is not the same as the path that was originally loaded,
+            //then delete the old item, and remember the new path
 
-            mCoupon.title = mEtTitle.getText().toString();
-            mCoupon.expDateString = mTvDate.getText().toString();
-            mCoupon.used = mMarkAsUsed.isChecked();
-
-            if (!TextUtils.isEmpty(path)) { //this means a new photo was taken
-                //remember this old path, so we can delete that image
-                oldPath = mCoupon.filePath;
-                //should do this after title and expDateString has been set.
-                renameFile(mCoupon, path);
-            }
-
-            mDbHandler.updateCoupon(mCoupon);
-
-            if (oldPath != null) {
-                //there was a new image taken, delete the old one
+            if (!mCoupon.filePath.equalsIgnoreCase(pathToSave)) {
+                //If the new path is not the same as the existing path, then remember the old path,
+                //so we can delete that image
+                String oldPath = mCoupon.filePath;
+                renameFileWithMetaData(mCoupon, pathToSave);
                 File f = new File(oldPath);
                 f.delete();
             }
 
+            mDbHandler.updateCoupon(mCoupon);
             finish();
+
+
         } else {
             //rename the path to have proper convention, then save
-            mCoupon = new Coupon(mEtTitle.getText().toString(), mTvDate.getText().toString(), path, mMarkAsUsed.isChecked());
-            //rename the path to have proper convention, then save
-            renameFile(mCoupon, path);
+            renameFileWithMetaData(mCoupon, pathToSave);
 
             try {
                 mDbHandler.addCoupon(mCoupon);
@@ -523,7 +546,6 @@ public class CouponActivity extends ActionBarActivity {
                 e.printStackTrace();
             }
         }
-
     }
 
     /**
@@ -531,7 +553,7 @@ public class CouponActivity extends ActionBarActivity {
      * @param c The coupon, whose file name is going to change.
      * @param originalPath  the original path that will be renamed.
      */
-    private void renameFile(Coupon c, String originalPath) {
+    private void renameFileWithMetaData(Coupon c, String originalPath) {
 
         File file = new File(originalPath);
 

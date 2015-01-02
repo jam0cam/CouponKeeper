@@ -4,6 +4,7 @@ import android.content.Context;
 import android.graphics.PorterDuff;
 import android.support.v7.widget.CardView;
 import android.support.v7.widget.RecyclerView;
+import android.util.Log;
 import android.util.SparseBooleanArray;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -20,6 +21,7 @@ import java.util.List;
 
 public class MyRecyclerAdapter extends RecyclerView.Adapter<MyRecyclerAdapter.ViewHolder> {
 
+    private static final String TAG = MyRecyclerAdapter.class.getName();
     private List<Coupon> items;
     private SparseBooleanArray selectedItems;
 
@@ -49,6 +51,7 @@ public class MyRecyclerAdapter extends RecyclerView.Adapter<MyRecyclerAdapter.Vi
 
         Picasso.with(holder.mImageView.getContext()).cancelRequest(holder.mImageView);
 
+        Log.d(TAG, "Loading file: " + item.filePath);
         Picasso.with(holder.mImageView.getContext())
                 .load(new File(item.filePath))
                 .fit()
