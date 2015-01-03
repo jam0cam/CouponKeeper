@@ -161,7 +161,7 @@ public class ListActivity extends ActionBarActivity implements
         for (int i = selectedItemPositions.size() - 1; i >= 0; i--) {
             Coupon c = mCoupons.get(selectedItemPositions.get(i));
             mAdapter.removeData(selectedItemPositions.get(i));
-            mDbHandler.deleteCoupon(c.id);
+            CouponHandler.deleteCoupon(c, mDbHandler, this);
         }
     }
 
