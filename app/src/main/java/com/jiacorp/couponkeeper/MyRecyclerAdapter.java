@@ -54,7 +54,7 @@ public class MyRecyclerAdapter extends RecyclerView.Adapter<MyRecyclerAdapter.Vi
         Log.d(TAG, "Loading file: " + item.filePath);
         Picasso.with(holder.mImageView.getContext())
                 .load(new File(item.filePath))
-                .resize(200, 200)
+                .resize(300, 300)
                 .centerCrop()
                 .into(holder.mImageView, new Callback() {
                     @Override

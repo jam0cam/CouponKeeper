@@ -1,7 +1,10 @@
 package com.jiacorp.couponkeeper;
 
+import android.app.AlarmManager;
 import android.app.AlertDialog;
 import android.app.DatePickerDialog;
+import android.app.PendingIntent;
+import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.database.Cursor;
@@ -42,6 +45,7 @@ import com.squareup.picasso.Picasso;
 import java.io.File;
 import java.io.IOException;
 import java.text.DateFormat;
+import java.text.ParseException;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
@@ -507,6 +511,7 @@ public class CouponActivity extends ActionBarActivity {
             return newUri.getPath();
         }
     }
+
     private void finishAfterUpdate() {
         Intent intent = new Intent();
         intent.putExtra(EXTRA_COUPON, mCoupon);
@@ -541,7 +546,7 @@ public class CouponActivity extends ActionBarActivity {
         Log.d(TAG, "Expiration Date:" + mTvDate.getText().toString());
 
         String pathToSave = finalizedFileAndGetPath();
-        mCoupon.title = mEtTitle.getText().toString();
+        mCoupon.title = mEtTitle.getText().toString().trim();
         mCoupon.expDateString = mTvDate.getText().toString();
         mCoupon.used = mMarkAsUsed.isChecked();
 
@@ -559,20 +564,63 @@ public class CouponActivity extends ActionBarActivity {
             }
 
             mDbHandler.updateCoupon(mCoupon);
+            deleteAlarm();
+            createAlarm();
             finishAfterUpdate();
 
         } else {
             //rename the path to have proper convention, then save
             renameFileWithMetaData(mCoupon, pathToSave);
-
             try {
                 mDbHandler.addCoupon(mCoupon);
+                createAlarm();
                 finishAfterAdd();
             } catch (DBException e) {
                 Toast.makeText(this, "Cannot save coupon", Toast.LENGTH_SHORT).show();
                 Log.e(TAG, "Cannot save coupon");
                 e.printStackTrace();
             }
+        }
+    }
+
+    private void deleteAlarm() {
+        AlarmManager alarmManager = (AlarmManager) this
+                .getSystemService(Context.ALARM_SERVICE);
+
+        Intent intent = new Intent(this, AlarmReceiver.class);
+        PendingIntent pendingIntent = PendingIntent.getBroadcast(this, Integer.parseInt(mCoupon.id), intent, 0);
+        alarmManager.cancel(pendingIntent);
+        pendingIntent.cancel();
+    }
+
+    /**
+     * Creates an alarm for this coupon. The alarm date is 3 days before expiration date
+     */
+    private void createAlarm() {
+        Date expiration;
+        try {
+            expiration = mDateFormat.parse(mCoupon.expDateString);
+        } catch (ParseException e) {
+            Log.e(TAG, "problem parsing date: " + mCoupon.expDateString + ". Not creating alarm", e);
+            return;
+        }
+
+        Calendar calendar = Calendar.getInstance();
+        calendar.set(Calendar.YEAR, expiration.getYear());
+        calendar.set(Calendar.MONTH, expiration.getMonth());
+        calendar.set(Calendar.DATE, expiration.getDate());
+        calendar.set(Calendar.HOUR, 11);
+        calendar.add(Calendar.DATE, -3);
+
+        if (calendar.getTimeInMillis() > System.currentTimeMillis()) {
+            Intent myIntent = new Intent(this, AlarmReceiver.class);
+            myIntent.putExtra(CouponActivity.EXTRA_COUPON, mCoupon);
+            PendingIntent pendingIntent = PendingIntent.getBroadcast(this, Integer.parseInt(mCoupon.id), myIntent, 0);
+
+            AlarmManager alarmManager = (AlarmManager)getSystemService(ALARM_SERVICE);
+            alarmManager.set(AlarmManager.RTC, calendar.getTimeInMillis(), pendingIntent);
+
+            Log.d(TAG, "setting alarm for time: " + calendar.getTime() + " for coupon : " + mCoupon.title);
         }
     }
 
