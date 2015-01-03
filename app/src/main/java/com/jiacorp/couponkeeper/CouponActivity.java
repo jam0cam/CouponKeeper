@@ -121,6 +121,8 @@ public class CouponActivity extends ActionBarActivity {
         Coupon coupon = (Coupon) getIntent().getSerializableExtra(EXTRA_COUPON);
         mDefaultCalendar = Calendar.getInstance();
 
+        getSupportActionBar().setTitle(coupon.title);
+
         if (savedInstanceState != null) {
             mNewPhotoUri = savedInstanceState.getParcelable(EXTRA_URI);
             if (mNewPhotoUri != null) {

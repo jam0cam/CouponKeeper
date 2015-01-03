@@ -18,7 +18,7 @@
         >
         <activity
             android:name="com.jiacorp.couponkeeper.ListActivity"
-            android:label="@string/app_name"
+            android:label="@string/label_list_activity"
             android:screenOrientation="portrait"
             >
             <intent-filter>

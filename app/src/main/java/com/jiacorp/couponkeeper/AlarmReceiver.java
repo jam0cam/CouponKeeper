@@ -24,7 +24,7 @@ public class AlarmReceiver extends BroadcastReceiver {
         Intent intent1 = new Intent(context, CouponActivity.class);
         intent1.putExtra(CouponActivity.EXTRA_COUPON, coupon);
 
-        Notification notification = new Notification(R.drawable.ic_launcher,
+        Notification notification = new Notification(R.drawable.launcher,
                 context.getString(R.string.coupon_expiring_alert, coupon.title),
                 System.currentTimeMillis());
 
