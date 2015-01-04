@@ -8,5 +8,6 @@
     <color name="green">#547b36</color>
     <color name="transparent">#00FFFFFF</color>
     <color name="orange">#ff8d02</color>
+    <color name="orange_ripple">#ffffc211</color>
     <color name="dark_orange">#ffaa4801</color>
 </resources>

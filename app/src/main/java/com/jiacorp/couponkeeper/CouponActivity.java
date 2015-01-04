@@ -150,6 +150,7 @@ public class CouponActivity extends ActionBarActivity {
             mTvDate.setText(date);
             mImgMain.setImageDrawable(getResources().getDrawable(R.drawable.no_image));
             mDisplayedUri = null;
+            mScrollView.setVisibility(View.VISIBLE);
         }
 
         mDbHandler = ((CouponApplication)getApplication()).getDbHandler();
