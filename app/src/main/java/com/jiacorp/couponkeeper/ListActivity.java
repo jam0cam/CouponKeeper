@@ -67,6 +67,7 @@ public class ListActivity extends ActionBarActivity implements
 
         setSupportActionBar(mToolbar);
 
+        getSupportActionBar().setTitle(getResources().getString(R.string.label_list_activity));
         mDbHandler = ((CouponApplication)getApplication()).getDbHandler();
 
         mRecyclerView = (RecyclerView) findViewById(R.id.recycler_view);

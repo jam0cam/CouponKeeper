@@ -49,6 +49,7 @@ import java.util.List;
 
 import butterknife.ButterKnife;
 import butterknife.InjectView;
+import butterknife.OnClick;
 
 
 public class CouponActivity extends ActionBarActivity {
@@ -73,6 +74,9 @@ public class CouponActivity extends ActionBarActivity {
 
     @InjectView(R.id.toolbar)
     Toolbar mToolbar;
+
+    @InjectView(R.id.tv)
+    TextView mTv;
 
     @InjectView(R.id.tv_date)
     TextView mTvDate;
@@ -121,8 +125,6 @@ public class CouponActivity extends ActionBarActivity {
         Coupon coupon = (Coupon) getIntent().getSerializableExtra(EXTRA_COUPON);
         mDefaultCalendar = Calendar.getInstance();
 
-        getSupportActionBar().setTitle(coupon.title);
-
         if (savedInstanceState != null) {
             mNewPhotoUri = savedInstanceState.getParcelable(EXTRA_URI);
             if (mNewPhotoUri != null) {
@@ -140,8 +142,9 @@ public class CouponActivity extends ActionBarActivity {
             if (mCoupon.used) {
                 showOverlay();
             }
-
+            getSupportActionBar().setTitle(coupon.title);
         } else {
+            getSupportActionBar().setTitle(getResources().getString(R.string.new_coupon));
             mCoupon = new Coupon();
             String date = mDateFormat.format(new Date());
             mTvDate.setText(date);
@@ -258,7 +261,7 @@ public class CouponActivity extends ActionBarActivity {
     }
 
     private void showOverlay() {
-        mImgMain.setColorFilter(getResources().getColor(R.color.green), PorterDuff.Mode.SRC_ATOP);
+        mImgMain.setColorFilter(getResources().getColor(R.color.transparent_green), PorterDuff.Mode.SRC_ATOP);
     }
 
     private void initializeWithCoupon() {
@@ -384,6 +387,11 @@ public class CouponActivity extends ActionBarActivity {
             mSelectedImageUri = null;
             Toast.makeText(getApplicationContext(), "User cancelled image capture", Toast.LENGTH_SHORT).show();
         }
+    }
+
+    @OnClick(R.id.tv)
+    public void tvClicked() {
+        showCalendar();
     }
 
     private void scrollToTitle() {

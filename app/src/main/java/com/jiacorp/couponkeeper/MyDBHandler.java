@@ -9,7 +9,10 @@ import android.util.Log;
 
 import com.jiacorp.couponkeeper.exceptions.DBException;
 
+import java.text.DateFormat;
+import java.text.ParseException;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 /**
@@ -27,7 +30,7 @@ public class MyDBHandler extends SQLiteOpenHelper {
     public static final String COLUMN_EXP_DATE = "exp_date";
     public static final String COLUMN_PATH = "path";
     public static final String COLUMN_IS_USED = "is_used";
-
+    DateFormat mDateFormat;
 
     private String[] allColumns = {
             COLUMN_ID,
@@ -39,6 +42,8 @@ public class MyDBHandler extends SQLiteOpenHelper {
 
     public MyDBHandler(Context context, String name, SQLiteDatabase.CursorFactory factory, int version) {
         super(context, name, factory, version);
+
+        mDateFormat = android.text.format.DateFormat.getDateFormat(context);
     }
 
     @Override
@@ -48,7 +53,7 @@ public class MyDBHandler extends SQLiteOpenHelper {
                 TABLE_COUPONS + "("
                 + COLUMN_ID + " INTEGER PRIMARY KEY,"
                 + COLUMN_TITLE + " TEXT,"
-                + COLUMN_EXP_DATE + " DATE, "
+                + COLUMN_EXP_DATE + " INTEGER, "
                 + COLUMN_PATH + " TEXT, "
                 + COLUMN_IS_USED + " INTEGER"
                 + ")";
@@ -67,7 +72,15 @@ public class MyDBHandler extends SQLiteOpenHelper {
         Log.d(TAG, "update coupon " + coupon.title + "  path:" + coupon.filePath);
         ContentValues values = new ContentValues();
         values.put(COLUMN_TITLE, coupon.title);
-        values.put(COLUMN_EXP_DATE, coupon.expDateString);
+
+        long date = 0;
+        try {
+             date = mDateFormat.parse(coupon.expDateString).getTime();
+        } catch (ParseException e) {
+            Log.e(TAG, "unable to parse date: " + coupon.expDateString);
+        }
+
+        values.put(COLUMN_EXP_DATE, date);
         values.put(COLUMN_PATH, coupon.filePath);
         values.put(COLUMN_ID, coupon.id);
 
@@ -96,7 +109,17 @@ public class MyDBHandler extends SQLiteOpenHelper {
         Log.d(TAG, "adding coupon " + coupon.title + "  path:" + coupon.filePath);
         ContentValues values = new ContentValues();
         values.put(COLUMN_TITLE, coupon.title);
-        values.put(COLUMN_EXP_DATE, coupon.expDateString);
+
+
+        long date = 0;
+        try {
+            date = mDateFormat.parse(coupon.expDateString).getTime();
+        } catch (ParseException e) {
+            Log.e(TAG, "unable to parse date: " + coupon.expDateString);
+        }
+
+
+        values.put(COLUMN_EXP_DATE, date);
         values.put(COLUMN_PATH, coupon.filePath);
 
         if (coupon.used) {
@@ -126,7 +149,8 @@ public class MyDBHandler extends SQLiteOpenHelper {
 
         if (sort != null) {
             if (sort == ListActivity.Sort.EXP_DATE_ASC) {
-                orderBy = "date(" + COLUMN_EXP_DATE + ") ASC";
+                Log.d(TAG, "Sorting by date");
+                orderBy = COLUMN_EXP_DATE + " ASC";
             } else if (sort == ListActivity.Sort.NAME_ASC) {
                 orderBy = "lower(" + COLUMN_TITLE + ")  ASC";
             }
@@ -156,7 +180,8 @@ public class MyDBHandler extends SQLiteOpenHelper {
 
         coupon.id = cursor.getString(0);
         coupon.title =cursor.getString(1);
-        coupon.expDateString = cursor.getString(2);
+        long date = Long.parseLong(cursor.getString(2));
+        coupon.expDateString = mDateFormat.format(new Date(date));
         coupon.filePath =cursor.getString(3);
 
         int isUsed = cursor.getInt(4);

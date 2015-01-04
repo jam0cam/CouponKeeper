@@ -2,6 +2,11 @@
 <resources>
     <color name="blue">#2196F3</color>
     <color name="blue_ripple">#BBDEFB</color>
-    <color name="green">#6400ff00</color>
+    <color name="white">#ffffff</color>
+    <color name="black">#000000</color>
+    <color name="transparent_green">#6400ff00</color>
+    <color name="green">#547b36</color>
     <color name="transparent">#00FFFFFF</color>
+    <color name="orange">#ff8d02</color>
+    <color name="dark_orange">#ffaa4801</color>
 </resources>

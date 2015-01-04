@@ -98,6 +98,7 @@
                 android:paddingLeft="@dimen/default_outer_padding"
                 android:paddingRight="@dimen/default_outer_padding"
                 style="@style/Subtitle"
+                android:clickable="true"
                 />
             </LinearLayout>
 

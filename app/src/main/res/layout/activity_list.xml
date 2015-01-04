@@ -8,17 +8,10 @@
         android:layout_height="match_parent"
         android:orientation="vertical"
         >
-        <android.support.v7.widget.Toolbar
-            android:id="@+id/toolbar"
-            android:layout_width="match_parent"
-            android:layout_height="?attr/actionBarSize"
-            android:title="@string/app_name"
-            android:elevation="@dimen/medium_elevation"
-            android:background="@color/blue"
-            >
-
-        </android.support.v7.widget.Toolbar>
-
+        <include
+            android:id="@+id/tb"
+            layout="@layout/toolbar"
+            />
         <android.support.v7.widget.RecyclerView
             android:id="@+id/recycler_view"
             android:layout_width="match_parent"

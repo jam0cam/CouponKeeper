@@ -60,7 +60,9 @@ public class MyRecyclerAdapter extends RecyclerView.Adapter<MyRecyclerAdapter.Vi
                     @Override
                     public void onSuccess() {
                         if (item.used) {
-                            holder.mImageView.setColorFilter(holder.mImageView.getContext().getResources().getColor(R.color.green), PorterDuff.Mode.SRC_ATOP);
+                            holder.mImageView.setColorFilter(holder.mImageView.getContext().getResources().getColor(R.color.transparent_green), PorterDuff.Mode.SRC_ATOP);
+                        } else {
+                            holder.mImageView.clearColorFilter();
                         }
                     }
 

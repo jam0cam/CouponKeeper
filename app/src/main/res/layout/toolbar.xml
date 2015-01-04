@@ -8,7 +8,7 @@
         android:layout_height="?attr/actionBarSize"
         android:title="@string/app_name"
         android:elevation="@dimen/medium_elevation"
-        android:background="@color/blue"
+        android:background="?colorPrimary"
         android:layout_alignParentTop="true"
         />
 </merge>
