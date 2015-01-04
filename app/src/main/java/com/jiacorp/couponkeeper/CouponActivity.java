@@ -306,6 +306,7 @@ public class CouponActivity extends ActionBarActivity {
                 }
 
                 mDisplayedUri = Uri.parse("file:///" + mCoupon.filePath);
+                mScrollView.setVisibility(View.VISIBLE);
             }
         });
 
