@@ -50,12 +50,13 @@ import java.util.List;
 import butterknife.ButterKnife;
 import butterknife.InjectView;
 import butterknife.OnClick;
+import uk.co.senab.photoview.PhotoViewAttacher;
 
 
 public class CouponActivity extends ActionBarActivity {
 
     private static final String TAG = CouponActivity.class.getName();
-    private static final String EXTRA_URI = "extra-uri";
+    public static final String EXTRA_URI = "extra-uri";
     public static final String EXTRA_COUPON = "coupon";
     public static final String EXTRA_DB_ACTION = "db-action";
 
@@ -64,7 +65,6 @@ public class CouponActivity extends ActionBarActivity {
     private static final String TOKEN_DELIMITER = "kkk";
     private static final String SPACE_DELIMITER = "xxx";
     private static final String DATE_DELIMITER = "yyy";
-
 
     @InjectView(R.id.scroll_view)
     ScrollView mScrollView;
@@ -101,6 +101,8 @@ public class CouponActivity extends ActionBarActivity {
     Uri mNewPhotoUri;
     Uri mSelectedImageUri;
     Uri mDisplayedUri;
+
+    PhotoViewAttacher mAttacher;
 
     Coupon mCoupon;
 
@@ -180,13 +182,15 @@ public class CouponActivity extends ActionBarActivity {
         mImgMain.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                //only show the chooser if currently not displaying any photos
                 if (mDisplayedUri == null) {
                     showImagePicker();
-                } else {
-                    //there is already an image showing, so we want to allow touch and zoom
                 }
             }
         });
+
+        mAttacher = new PhotoViewAttacher(mImgMain);
+        mAttacher.update();
     }
 
     private void showImagePicker() {
