@@ -95,11 +95,11 @@ public class ListActivity extends ActionBarActivity implements
         if (item.getItemId() == R.id.action_check) {
             mMode = Mode.CHECK;
             mActionMode = mToolbar.startActionMode(ListActivity.this);
-            mActionMode.setTitle(mAdapter.getItemCount() + " Selected to mark as used.");
+            mActionMode.setTitle(mAdapter.getSelectedItemCount() + " to mark as used");
         } else if (item.getItemId() == R.id.action_delete) {
             mMode = Mode.DELETE;
             mActionMode = mToolbar.startActionMode(ListActivity.this);
-            mActionMode.setTitle(mAdapter.getItemCount() + " Selected For delete");
+            mActionMode.setTitle(mAdapter.getSelectedItemCount() + " for delete");
         } else if (item.getItemId() == R.id.action_sort_exp_soonest) {
             mSort = Sort.EXP_DATE_ASC;
             fadeOutAndReloadCoupons(mRecyclerView);

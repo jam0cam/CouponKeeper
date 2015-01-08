@@ -180,7 +180,11 @@ public class CouponActivity extends ActionBarActivity {
         mImgMain.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                showImagePicker();
+                if (mDisplayedUri == null) {
+                    showImagePicker();
+                } else {
+                    //there is already an image showing, so we want to allow touch and zoom
+                }
             }
         });
     }
@@ -352,6 +356,8 @@ public class CouponActivity extends ActionBarActivity {
             CouponHandler.deleteCoupon(mCoupon, mDbHandler, this);
             isDeleted = true;
             finishAfterDelete();
+        } else if (item.getItemId() == R.id.action_paper_clip) {
+            showImagePicker();
         }
 
         return super.onOptionsItemSelected(item);
