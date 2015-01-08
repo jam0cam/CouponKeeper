@@ -57,6 +57,9 @@ public class CouponActivity extends ActionBarActivity {
 
     private static final String TAG = CouponActivity.class.getName();
     public static final String EXTRA_URI = "extra-uri";
+    public static final String EXTRA_CAMERA_URI = "camera-uri";
+    public static final String EXTRA_ATTACH_URI = "attach-uri";
+    public static final String EXTRA_DISPLAY_URI = "display-uri";
     public static final String EXTRA_COUPON = "coupon";
     public static final String EXTRA_DB_ACTION = "db-action";
 
@@ -128,10 +131,10 @@ public class CouponActivity extends ActionBarActivity {
         mDefaultCalendar = Calendar.getInstance();
 
         if (savedInstanceState != null) {
-            mNewPhotoUri = savedInstanceState.getParcelable(EXTRA_URI);
-            if (mNewPhotoUri != null) {
-                Log.d(TAG, "Reloading uri: " + mNewPhotoUri.getPath());
-                displayCapturedImage(mNewPhotoUri);
+            mDisplayedUri = savedInstanceState.getParcelable(EXTRA_DISPLAY_URI);
+            if (mDisplayedUri != null) {
+                Log.d(TAG, "Reloading uri: " + mDisplayedUri.getPath());
+                displayCapturedImage(mDisplayedUri);
             }
         }
 
@@ -188,9 +191,6 @@ public class CouponActivity extends ActionBarActivity {
                 }
             }
         });
-
-        mAttacher = new PhotoViewAttacher(mImgMain);
-        mAttacher.update();
     }
 
     private void showImagePicker() {
@@ -314,8 +314,7 @@ public class CouponActivity extends ActionBarActivity {
                     mImgMain.setImageBitmap(bitmap);
                 }
 
-                mDisplayedUri = Uri.parse("file:///" + mCoupon.filePath);
-                mScrollView.setVisibility(View.VISIBLE);
+                postImageDisplayed(Uri.parse("file:///" + mCoupon.filePath));
             }
         });
 
@@ -370,16 +369,31 @@ public class CouponActivity extends ActionBarActivity {
     @Override
     protected void onSaveInstanceState(Bundle outState) {
         super.onSaveInstanceState(outState);
+        Log.d(TAG, "onSaveInstanceState");
 
-        if (mNewPhotoUri != null) {
-            Log.d(TAG, "Saving uri: " + mNewPhotoUri.getPath());
-            outState.putParcelable(EXTRA_URI, mNewPhotoUri);
-        }
+
+//        if (mDisplayedUri != null) {
+            outState.putParcelable(EXTRA_DISPLAY_URI, mDisplayedUri);
+            outState.putParcelable(EXTRA_CAMERA_URI, mNewPhotoUri);
+            outState.putParcelable(EXTRA_ATTACH_URI, mSelectedImageUri);
+//        }
+    }
+
+    @Override
+    protected void onRestoreInstanceState(Bundle savedInstanceState) {
+        super.onRestoreInstanceState(savedInstanceState);
+        Log.d(TAG, "onRestoreInstanceState");
+
+        mDisplayedUri = savedInstanceState.getParcelable(EXTRA_DISPLAY_URI);
+        mNewPhotoUri = savedInstanceState.getParcelable(EXTRA_CAMERA_URI);
+        mSelectedImageUri = savedInstanceState.getParcelable(EXTRA_ATTACH_URI);
     }
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
+
+        Log.d(TAG, "onActivityResult");
 
         if (resultCode == RESULT_OK) {
             if (data == null) {
@@ -434,7 +448,16 @@ public class CouponActivity extends ActionBarActivity {
                     }
                 });
 
+        postImageDisplayed(uri);
+    }
+
+    private void postImageDisplayed(Uri uri) {
         mDisplayedUri = uri;
+
+        mScrollView.setVisibility(View.VISIBLE);
+
+        mAttacher = new PhotoViewAttacher(mImgMain);
+        mAttacher.update();
     }
 
     /** Create a file Uri for saving an image or video */

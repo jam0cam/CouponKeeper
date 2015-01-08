@@ -4,7 +4,7 @@
     tools:context="com.jiacorp.couponkeeper.CouponActivity">
     <item android:id="@+id/action_paper_clip" android:title="@string/action_settings"
         app:showAsAction="always"
-        android:icon="@drawable/ic_camera_white"
+        android:icon="@drawable/ic_attach_file_white_24dp"
         />
     <item android:id="@+id/action_delete" android:title="@string/action_delete"
         app:showAsAction="always"
