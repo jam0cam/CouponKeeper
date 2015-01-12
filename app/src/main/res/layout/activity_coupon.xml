@@ -19,7 +19,7 @@
         >
         <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
+            android:layout_height="wrap_content"
             android:orientation="vertical"
             android:paddingBottom="@dimen/default_outer_padding"
             >
@@ -27,7 +27,6 @@
                 android:id="@+id/frame_layout"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_above="@+id/tv_title"
                 >
                 <ImageView
                     android:id="@+id/img_main"
@@ -35,6 +34,20 @@
                     android:layout_height="match_parent"
                     android:adjustViewBounds="true"
                     android:layout_gravity="center"
+                    android:contentDescription="@string/coupon_image_description" />
+                <!--FAB-->
+                <ImageButton
+                    android:id="@+id/btn_rotate_right"
+                    android:layout_width="@dimen/floating_rotate_button_size"
+                    android:layout_height="@dimen/floating_rotate_button_size"
+                    android:layout_gravity="bottom|end"
+                    android:layout_marginRight="@dimen/floating_rotate_button_size_margin"
+                    android:layout_marginEnd="@dimen/floating_rotate_button_size_margin"
+                    android:layout_marginBottom="@dimen/floating_rotate_button_size_margin"
+                    android:background="@drawable/oval_ripple"
+                    android:src="@drawable/ic_rotate_right_white_24dp"
+                    android:elevation="@dimen/medium_elevation"
+                    android:visibility="gone"
                     />
             </FrameLayout>
 

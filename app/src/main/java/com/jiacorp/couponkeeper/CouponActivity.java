@@ -6,10 +6,12 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.database.Cursor;
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.Matrix;
 import android.graphics.PorterDuff;
 import android.media.ExifInterface;
 import android.net.Uri;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
@@ -26,6 +28,7 @@ import android.widget.CompoundButton;
 import android.widget.DatePicker;
 import android.widget.EditText;
 import android.widget.FrameLayout;
+import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.RelativeLayout;
 import android.widget.ScrollView;
@@ -40,6 +43,7 @@ import com.squareup.picasso.Callback;
 import com.squareup.picasso.Picasso;
 
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.text.DateFormat;
 import java.util.Arrays;
@@ -101,9 +105,14 @@ public class CouponActivity extends ActionBarActivity {
     @InjectView(R.id.relative_layout)
     RelativeLayout mRelativeLayout;
 
+    @InjectView(R.id.btn_rotate_right)
+    ImageButton mBtnRotateRight;
+
     Uri mNewPhotoUri;
     Uri mSelectedImageUri;
     Uri mDisplayedUri;
+
+    private int mCurrentRotation;
 
     PhotoViewAttacher mAttacher;
 
@@ -323,23 +332,6 @@ public class CouponActivity extends ActionBarActivity {
         mDefaultCalendar.set(Integer.parseInt(dates.get(2)), Integer.parseInt(dates.get(0)) - 1, Integer.parseInt(dates.get(1)));
     }
 
-    private void showCalendar() {
-        int mYear = mDefaultCalendar.get(Calendar.YEAR);
-        int mMonth = mDefaultCalendar.get(Calendar.MONTH);
-        int mDay = mDefaultCalendar.get(Calendar.DAY_OF_MONTH);
-
-
-        System.out.println("the selected " + mDay);
-        DatePickerDialog dialog = new DatePickerDialog(CouponActivity.this,
-                new DatePickerDialog.OnDateSetListener() {
-                    @Override
-                    public void onDateSet(DatePicker view, int year, int monthOfYear, int dayOfMonth) {
-                        mTvDate.setText(mDateFormat.format(new Date(year-1900, monthOfYear, dayOfMonth)));
-                    }
-                }, mYear, mMonth, mDay);
-        dialog.show();
-    }
-
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         // Inflate the menu; this adds items to the action bar if it is present.
@@ -411,13 +403,33 @@ public class CouponActivity extends ActionBarActivity {
         } else {
             mNewPhotoUri = null;
             mSelectedImageUri = null;
-            Toast.makeText(getApplicationContext(), "User cancelled image capture", Toast.LENGTH_SHORT).show();
         }
     }
 
     @OnClick(R.id.tv)
-    public void tvClicked() {
-        showCalendar();
+    public void showCalendar() {
+        int mYear = mDefaultCalendar.get(Calendar.YEAR);
+        int mMonth = mDefaultCalendar.get(Calendar.MONTH);
+        int mDay = mDefaultCalendar.get(Calendar.DAY_OF_MONTH);
+
+
+        System.out.println("the selected " + mDay);
+        DatePickerDialog dialog = new DatePickerDialog(CouponActivity.this,
+                new DatePickerDialog.OnDateSetListener() {
+                    @Override
+                    public void onDateSet(DatePicker view, int year, int monthOfYear, int dayOfMonth) {
+                        mTvDate.setText(mDateFormat.format(new Date(year-1900, monthOfYear, dayOfMonth)));
+                    }
+                }, mYear, mMonth, mDay);
+        dialog.show();
+    }
+
+    @OnClick(R.id.btn_rotate_right)
+    public void rotateRight() {
+        Log.d(TAG, "Rotating by 90");
+        int nextRotation = getRightRotationValue();
+        mAttacher.setRotationTo(nextRotation);
+        mCurrentRotation = nextRotation;
     }
 
     private void scrollToTitle() {
@@ -453,7 +465,7 @@ public class CouponActivity extends ActionBarActivity {
 
     private void postImageDisplayed(Uri uri) {
         mDisplayedUri = uri;
-
+        mBtnRotateRight.setVisibility(View.VISIBLE);
         mScrollView.setVisibility(View.VISIBLE);
 
         mAttacher = new PhotoViewAttacher(mImgMain);
@@ -579,6 +591,8 @@ public class CouponActivity extends ActionBarActivity {
         mCoupon.expDateString = mTvDate.getText().toString();
         mCoupon.used = mMarkAsUsed.isChecked();
 
+        String newFileName = null;
+
         if (mIsEditMode) {
             //if the new path is not the same as the path that was originally loaded,
             //then delete the old item, and remember the new path
@@ -587,9 +601,11 @@ public class CouponActivity extends ActionBarActivity {
                 //If the new path is not the same as the existing path, then remember the old path,
                 //so we can delete that image
                 String oldPath = mCoupon.filePath;
-                renameFileWithMetaData(mCoupon, pathToSave);
+                newFileName = renameFileWithMetaData(mCoupon, pathToSave);
                 File f = new File(oldPath);
                 f.delete();
+            } else {
+                newFileName = pathToSave;
             }
 
             CouponHandler.updateCoupon(mCoupon, mDbHandler, this);
@@ -597,7 +613,7 @@ public class CouponActivity extends ActionBarActivity {
 
         } else {
             //rename the path to have proper convention, then save
-            renameFileWithMetaData(mCoupon, pathToSave);
+            newFileName = renameFileWithMetaData(mCoupon, pathToSave);
             try {
                 CouponHandler.addCoupon(mCoupon, mDbHandler, this);
                 finishAfterAdd();
@@ -607,14 +623,58 @@ public class CouponActivity extends ActionBarActivity {
                 e.printStackTrace();
             }
         }
+
+        //if there is rotation information set, then we have to rotate the original file
+        if (mCurrentRotation != 0 && newFileName != null) {
+            FileRotator task = new FileRotator();
+            task.execute(newFileName);
+        }
     }
+
+    public class FileRotator extends AsyncTask<String, Void, Void> {
+        @Override
+        protected Void doInBackground(String... params) {
+            final String finalNewFileName = params[0];
+
+            Log.d(TAG, "Resaving the file after doing " + mCurrentRotation + " rotation for file " + finalNewFileName);
+
+            Bitmap bmp = BitmapFactory.decodeFile(finalNewFileName);
+
+            Matrix matrix = new Matrix();
+            matrix.postRotate(90);
+            bmp = Bitmap.createBitmap(bmp, 0, 0, bmp.getWidth(), bmp.getHeight(), matrix, true);
+
+            FileOutputStream fOut;
+            try {
+                fOut = new FileOutputStream(finalNewFileName);
+                bmp.compress(Bitmap.CompressFormat.JPEG, 100, fOut);
+                fOut.flush();
+                fOut.close();
+            }  catch (IOException e) {
+                Log.e(TAG, e.getLocalizedMessage(), e);
+                e.printStackTrace();
+            }
+
+            return null;
+        }
+
+        @Override
+        protected void onPostExecute(Void aVoid) {
+            super.onPostExecute(aVoid);
+            Log.d(TAG, "Finished saving file");
+        }
+    }
+
+
+
 
     /**
      * Formats a file name to contain meta data about the expiration date and the title
      * @param c The coupon, whose file name is going to change.
      * @param originalPath  the original path that will be renamed.
+     * @return newFilePath the new path saved.
      */
-    private void renameFileWithMetaData(Coupon c, String originalPath) {
+    private String renameFileWithMetaData(Coupon c, String originalPath) {
 
         File file = new File(originalPath);
 
@@ -636,6 +696,20 @@ public class CouponActivity extends ActionBarActivity {
         } else {
             Log.d(TAG, "Unable to create file. " + newFilePath + " already exists");
             Toast.makeText(this, "Unable to create file. " + newFilePath + " already exists", Toast.LENGTH_LONG).show();
+        }
+
+        return newFilePath;
+    }
+
+    private int getRightRotationValue() {
+        if (mCurrentRotation == 0) {
+            return 90;
+        } else if (mCurrentRotation == 90) {
+            return 180;
+        } else if (mCurrentRotation == 180) {
+            return 270;
+        } else {
+            return 0;
         }
     }
 }

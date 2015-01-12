@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Coupon Keeper</string>
+    <string name="app_name">C-Wallet</string>
     <string name="label_list_activity">Coupons</string>
 
     <string name="hello_world">Hello world!</string>
@@ -16,4 +16,5 @@
     <string name="alert_changes_not_saved">There are incomplete fields. Item will not be saved. Continue?</string>
     <string name="coupon_expiring_alert">Your %1$s coupon will expire in 3 days!</string>
     <string name="new_coupon">New Coupon</string>
+    <string name="coupon_image_description">Coupon photo</string>
 </resources>
