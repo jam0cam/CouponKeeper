@@ -553,6 +553,15 @@ public class CouponActivity extends ActionBarActivity {
         }
     }
 
+    private void finalSaveStep(String fileName) {
+        //if there is rotation information set, then we have to rotate the original file
+        if (mCurrentRotation != 0 && fileName != null) {
+            FileRotator task = new FileRotator();
+            task.execute(mCoupon.id, fileName);
+            mCoupon.rotation = mCurrentRotation;
+        }
+    }
+
     private void finishAfterUpdate() {
         Intent intent = new Intent();
         intent.putExtra(EXTRA_COUPON, mCoupon);
@@ -609,13 +618,14 @@ public class CouponActivity extends ActionBarActivity {
             }
 
             CouponHandler.updateCoupon(mCoupon, mDbHandler, this);
+            finalSaveStep(newFileName);
             finishAfterUpdate();
-
         } else {
             //rename the path to have proper convention, then save
             newFileName = renameFileWithMetaData(mCoupon, pathToSave);
             try {
                 CouponHandler.addCoupon(mCoupon, mDbHandler, this);
+                finalSaveStep(newFileName);
                 finishAfterAdd();
             } catch (DBException e) {
                 Toast.makeText(this, "Cannot save coupon", Toast.LENGTH_SHORT).show();
@@ -623,25 +633,20 @@ public class CouponActivity extends ActionBarActivity {
                 e.printStackTrace();
             }
         }
-
-        //if there is rotation information set, then we have to rotate the original file
-        if (mCurrentRotation != 0 && newFileName != null) {
-            FileRotator task = new FileRotator();
-            task.execute(newFileName);
-        }
     }
 
-    public class FileRotator extends AsyncTask<String, Void, Void> {
+    public class FileRotator extends AsyncTask<String, Void, String> {
         @Override
-        protected Void doInBackground(String... params) {
-            final String finalNewFileName = params[0];
+        protected String doInBackground(String... params) {
+            String couponId = params[0];
+            final String finalNewFileName = params[1];
 
             Log.d(TAG, "Resaving the file after doing " + mCurrentRotation + " rotation for file " + finalNewFileName);
 
             Bitmap bmp = BitmapFactory.decodeFile(finalNewFileName);
 
             Matrix matrix = new Matrix();
-            matrix.postRotate(90);
+            matrix.postRotate(mCurrentRotation);
             bmp = Bitmap.createBitmap(bmp, 0, 0, bmp.getWidth(), bmp.getHeight(), matrix, true);
 
             FileOutputStream fOut;
@@ -655,12 +660,12 @@ public class CouponActivity extends ActionBarActivity {
                 e.printStackTrace();
             }
 
-            return null;
+            return couponId;
         }
 
         @Override
-        protected void onPostExecute(Void aVoid) {
-            super.onPostExecute(aVoid);
+        protected void onPostExecute(String couponId) {
+            super.onPostExecute(couponId);
             Log.d(TAG, "Finished saving file");
         }
     }

@@ -50,12 +50,12 @@ public class MyRecyclerAdapter extends RecyclerView.Adapter<MyRecyclerAdapter.Vi
         holder.mCardView.setOnClickListener(mClickListener);
 
         Picasso.with(holder.mImageView.getContext()).cancelRequest(holder.mImageView);
-
         Log.d(TAG, "Loading file: " + item.filePath);
         Picasso.with(holder.mImageView.getContext())
                 .load(new File(item.filePath))
                 .resize(300, 300)
                 .centerCrop()
+                .rotate(item.rotation)
                 .into(holder.mImageView, new Callback() {
                     @Override
                     public void onSuccess() {

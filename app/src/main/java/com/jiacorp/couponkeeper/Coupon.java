@@ -11,6 +11,7 @@ public class Coupon implements Serializable {
     public String filePath;
     public boolean used = false;
     public String id;
+    public int rotation;
 
     public void copyFrom(Coupon c) {
         this.title = c.title;
@@ -18,5 +19,6 @@ public class Coupon implements Serializable {
         this.filePath = c.filePath;
         this.used = c.used;
         this.id = c.id;
+        this.rotation = c.rotation;
     }
 }
