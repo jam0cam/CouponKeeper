@@ -558,7 +558,6 @@ public class CouponActivity extends ActionBarActivity {
         if (mCurrentRotation != 0 && fileName != null) {
             FileRotator task = new FileRotator();
             task.execute(mCoupon.id, fileName);
-            mCoupon.rotation = mCurrentRotation;
         }
     }
 

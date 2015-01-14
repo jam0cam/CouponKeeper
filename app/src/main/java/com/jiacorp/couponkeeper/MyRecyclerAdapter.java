@@ -55,7 +55,6 @@ public class MyRecyclerAdapter extends RecyclerView.Adapter<MyRecyclerAdapter.Vi
                 .load(new File(item.filePath))
                 .resize(300, 300)
                 .centerCrop()
-                .rotate(item.rotation)
                 .into(holder.mImageView, new Callback() {
                     @Override
                     public void onSuccess() {

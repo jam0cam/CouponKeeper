@@ -58,6 +58,7 @@ public class CouponHandler {
         PendingIntent pendingIntent = PendingIntent.getBroadcast(context, Integer.parseInt(coupon.id), intent, 0);
         alarmManager.cancel(pendingIntent);
         pendingIntent.cancel();
+        Log.d(TAG, "delete alarm for coupon " + coupon.title);
     }
 
     /**
@@ -74,10 +75,10 @@ public class CouponHandler {
         }
 
         Calendar calendar = Calendar.getInstance();
-        calendar.set(Calendar.YEAR, expiration.getYear());
+        calendar.set(Calendar.YEAR, expiration.getYear() + 1900);
         calendar.set(Calendar.MONTH, expiration.getMonth());
         calendar.set(Calendar.DATE, expiration.getDate());
-        calendar.set(Calendar.HOUR, 11);
+        calendar.set(Calendar.HOUR_OF_DAY, 8);
         calendar.add(Calendar.DATE, -3);
 
         if (calendar.getTimeInMillis() > System.currentTimeMillis()) {
@@ -88,7 +89,9 @@ public class CouponHandler {
             AlarmManager alarmManager = (AlarmManager)context.getSystemService(Activity.ALARM_SERVICE);
             alarmManager.set(AlarmManager.RTC, calendar.getTimeInMillis(), pendingIntent);
 
-            Log.d(TAG, "setting alarm for time: " + calendar.getTime() + " for coupon : " + coupon.title);
+            Log.d(TAG, "setting alarm for time: " + calendar.get(Calendar.MONTH) + "/" + calendar.get(Calendar.DAY_OF_MONTH) + "/" + calendar.get(Calendar.YEAR) + " for coupon : " + coupon.title);
+        } else {
+            Log.d(TAG, "Not creating alarm because the alarm time has already passed");
         }
     }
 
