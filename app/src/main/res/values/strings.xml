@@ -17,4 +17,5 @@
     <string name="coupon_expiring_alert">Your %1$s coupon will expire in 3 days!</string>
     <string name="new_coupon">New Coupon</string>
     <string name="coupon_image_description">Coupon photo</string>
+    <string name="action_notify_now">notify now</string>
 </resources>

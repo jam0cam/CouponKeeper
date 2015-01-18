@@ -2,6 +2,9 @@ package com.jiacorp.couponkeeper;
 
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
+import android.app.Activity;
+import android.app.AlarmManager;
+import android.app.PendingIntent;
 import android.content.Intent;
 import android.os.Bundle;
 import android.support.v7.app.ActionBarActivity;
@@ -17,6 +20,7 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.ImageButton;
 
+import java.util.Calendar;
 import java.util.List;
 
 import butterknife.ButterKnife;
@@ -106,6 +110,20 @@ public class ListActivity extends ActionBarActivity implements
         } else if (item.getItemId() == R.id.action_sort_coupon_name) {
             mSort = Sort.NAME_ASC;
             fadeOutAndReloadCoupons(mRecyclerView);
+        } else if (item.getItemId() == R.id.action_notify_now) {
+
+            Calendar calendar = Calendar.getInstance();
+            calendar.add(Calendar.SECOND, 10);
+
+            Coupon coupon = mCoupons.get(0);
+            Intent myIntent = new Intent(this, AlarmReceiver.class);
+            myIntent.putExtra(CouponActivity.EXTRA_COUPON, coupon);
+            PendingIntent pendingIntent = PendingIntent.getBroadcast(this, Integer.parseInt(coupon.id), myIntent, 0);
+
+            AlarmManager alarmManager = (AlarmManager)getSystemService(Activity.ALARM_SERVICE);
+            alarmManager.set(AlarmManager.RTC, calendar.getTimeInMillis(), pendingIntent);
+
+//            Toast.makeText(this, "Created alarm for time: " + calendar.getTime(), Toast.LENGTH_SHORT).show();
         }
 
         return super.onOptionsItemSelected(item);
