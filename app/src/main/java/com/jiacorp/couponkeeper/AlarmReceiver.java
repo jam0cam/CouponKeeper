@@ -57,7 +57,8 @@ public class AlarmReceiver extends BroadcastReceiver {
         Log.d(TAG, "Displaying nofitication for coupon: " + coupon.title);
         NotificationCompat.Builder mBuilder =
                 new NotificationCompat.Builder(context)
-                        .setSmallIcon(R.drawable.launcher)
+                        .setSmallIcon(R.drawable.notification)
+                        .setColor(context.getResources().getColor(R.color.orange))
                         .setLargeIcon(bitmap)
                         .setContentTitle(context.getString(R.string.app_name))
                         .setContentText(context.getString(R.string.coupon_expiring_alert, coupon.title));
