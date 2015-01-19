@@ -7,7 +7,6 @@ import android.app.AlarmManager;
 import android.app.PendingIntent;
 import android.content.Intent;
 import android.os.Bundle;
-import android.support.v7.app.ActionBarActivity;
 import android.support.v7.widget.DefaultItemAnimator;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
@@ -28,7 +27,7 @@ import butterknife.InjectView;
 import butterknife.OnClick;
 
 
-public class ListActivity extends ActionBarActivity implements
+public class ListActivity extends BaseActivity implements
         View.OnClickListener,
         View.OnLongClickListener, android.view.ActionMode.Callback {
 

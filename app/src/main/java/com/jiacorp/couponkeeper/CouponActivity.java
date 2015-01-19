@@ -16,7 +16,6 @@ import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
 import android.provider.MediaStore;
-import android.support.v7.app.ActionBarActivity;
 import android.support.v7.widget.Toolbar;
 import android.text.TextUtils;
 import android.util.Log;
@@ -57,7 +56,7 @@ import butterknife.OnClick;
 import uk.co.senab.photoview.PhotoViewAttacher;
 
 
-public class CouponActivity extends ActionBarActivity {
+public class CouponActivity extends BaseActivity {
 
     private static final String TAG = CouponActivity.class.getName();
     public static final String EXTRA_URI = "extra-uri";
