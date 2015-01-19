@@ -4,10 +4,10 @@
     <color name="blue_ripple">#BBDEFB</color>
     <color name="white">#ffffff</color>
     <color name="black">#000000</color>
-    <color name="transparent_green">#6400ff00</color>
-    <color name="green">#547b36</color>
+    <color name="transparent_green">#644CAF50</color>
+    <color name="green">#4CAF50</color>
     <color name="transparent">#00FFFFFF</color>
-    <color name="orange">#ff8d02</color>
-    <color name="orange_ripple">#ffffc211</color>
-    <color name="dark_orange">#ffaa4801</color>
+    <color name="orange">#FF9800</color>
+    <color name="orange_ripple">#FFB74D</color>
+    <color name="dark_orange">#F57C00</color>
 </resources>
