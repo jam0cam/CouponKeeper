@@ -1,4 +1,4 @@
-package com.jiacorp.couponkeeper;
+package com.jiacorp.cwallet;
 
 import android.app.AlertDialog;
 import android.app.DatePickerDialog;
@@ -35,7 +35,7 @@ import android.widget.Switch;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.jiacorp.couponkeeper.exceptions.DBException;
+import com.jiacorp.cwallet.exceptions.DBException;
 import com.nostra13.universalimageloader.core.ImageLoader;
 import com.nostra13.universalimageloader.core.listener.SimpleImageLoadingListener;
 import com.squareup.picasso.Callback;

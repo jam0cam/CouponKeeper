@@ -1,4 +1,4 @@
-package com.jiacorp.couponkeeper;
+package com.jiacorp.cwallet;
 
 import android.content.ContentValues;
 import android.content.Context;
@@ -7,7 +7,7 @@ import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.util.Log;
 
-import com.jiacorp.couponkeeper.exceptions.DBException;
+import com.jiacorp.cwallet.exceptions.DBException;
 
 import java.text.DateFormat;
 import java.text.ParseException;

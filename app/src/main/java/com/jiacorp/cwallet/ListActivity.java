@@ -1,4 +1,4 @@
-package com.jiacorp.couponkeeper;
+package com.jiacorp.cwallet;
 
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;

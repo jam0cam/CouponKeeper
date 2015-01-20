@@ -1,4 +1,4 @@
-package com.jiacorp.couponkeeper;
+package com.jiacorp.cwallet;
 
 import android.content.res.Resources;
 import android.graphics.Bitmap;

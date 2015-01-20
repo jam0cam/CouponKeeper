@@ -1,4 +1,4 @@
-package com.jiacorp.couponkeeper.events;
+package com.jiacorp.cwallet.events;
 
 /**
  * Created by jitse on 1/11/15.

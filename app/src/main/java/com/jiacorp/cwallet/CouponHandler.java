@@ -1,4 +1,4 @@
-package com.jiacorp.couponkeeper;
+package com.jiacorp.cwallet;
 
 import android.app.Activity;
 import android.app.AlarmManager;
@@ -7,7 +7,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.util.Log;
 
-import com.jiacorp.couponkeeper.exceptions.DBException;
+import com.jiacorp.cwallet.exceptions.DBException;
 
 import java.io.File;
 import java.text.DateFormat;

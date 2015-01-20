@@ -1,4 +1,4 @@
-package com.jiacorp.couponkeeper.exceptions;
+package com.jiacorp.cwallet.exceptions;
 
 /**
  * Created by jitse on 12/12/14.
