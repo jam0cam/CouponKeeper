@@ -16,6 +16,9 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.ImageButton;
 
+import com.google.android.gms.analytics.HitBuilders;
+import com.google.android.gms.analytics.Tracker;
+
 import java.util.List;
 
 import butterknife.ButterKnife;
@@ -56,6 +59,8 @@ public class ListActivity extends BaseActivity implements
     Coupon mSelectedCoupon;
     ActionMode mActionMode;
 
+    private Tracker mTracker;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -63,6 +68,8 @@ public class ListActivity extends BaseActivity implements
         setContentView(R.layout.activity_list);
 
         ButterKnife.inject(this);
+
+        mTracker = ((CouponApplication)getApplication()).getTracker();
 
         setSupportActionBar(mToolbar);
 
@@ -83,6 +90,16 @@ public class ListActivity extends BaseActivity implements
     }
 
     @Override
+    protected void onResume() {
+        super.onResume();
+
+        mTracker.send(new HitBuilders.EventBuilder()
+                .setCategory(GA.CAT_COUPON_LIST)
+                .setAction(GA.ACTION_PAGE_RESUMED)
+                .build());
+    }
+
+    @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         // Inflate the menu; this adds items to the action bar if it is present.
         getMenuInflater().inflate(R.menu.menu_list, menu);
@@ -100,26 +117,23 @@ public class ListActivity extends BaseActivity implements
             mActionMode = mToolbar.startActionMode(ListActivity.this);
             mActionMode.setTitle(mAdapter.getSelectedItemCount() + " for delete");
         } else if (item.getItemId() == R.id.action_sort_exp_soonest) {
+            mTracker.send(new HitBuilders.EventBuilder()
+                    .setCategory(GA.CAT_COUPON_LIST)
+                    .setAction(GA.ACTION_SORT)
+                    .setLabel(GA.LABEL_SORT_DATE)
+                    .build());
+
             mSort = Sort.EXP_DATE_ASC;
             fadeOutAndReloadCoupons(mRecyclerView);
         } else if (item.getItemId() == R.id.action_sort_coupon_name) {
+            mTracker.send(new HitBuilders.EventBuilder()
+                    .setCategory(GA.CAT_COUPON_LIST)
+                    .setAction(GA.ACTION_SORT)
+                    .setLabel(GA.LABEL_SORT_NAME)
+                    .build());
             mSort = Sort.NAME_ASC;
             fadeOutAndReloadCoupons(mRecyclerView);
         }
-//        else if (item.getItemId() == R.id.action_notify_now) {
-//
-//            Calendar calendar = Calendar.getInstance();
-//            calendar.add(Calendar.SECOND, 10);
-//
-//            Coupon coupon = mCoupons.get(0);
-//            Intent myIntent = new Intent(this, AlarmReceiver.class);
-//            myIntent.putExtra(CouponActivity.EXTRA_COUPON, coupon);
-//            PendingIntent pendingIntent = PendingIntent.getBroadcast(this, Integer.parseInt(coupon.id), myIntent, 0);
-//
-//            AlarmManager alarmManager = (AlarmManager)getSystemService(Activity.ALARM_SERVICE);
-//            alarmManager.set(AlarmManager.RTC, calendar.getTimeInMillis(), pendingIntent);
-//        }
-
         return super.onOptionsItemSelected(item);
     }
 
@@ -151,6 +165,11 @@ public class ListActivity extends BaseActivity implements
 
     @OnClick(R.id.btn_add)
     public void addClicked() {
+        mTracker.send(new HitBuilders.EventBuilder()
+                .setCategory(GA.CAT_COUPON_LIST)
+                .setAction(GA.ACTION_ADD_COUPON)
+                .build());
+
         Intent intent = new Intent(this, CouponActivity.class);
         startActivityForResult(intent, 1);
     }
@@ -170,6 +189,11 @@ public class ListActivity extends BaseActivity implements
     }
 
     private void deleteCheckedItems() {
+        mTracker.send(new HitBuilders.EventBuilder()
+                .setCategory(GA.CAT_COUPON_LIST)
+                .setAction(GA.ACTION_DELETE)
+                .build());
+
         List<Integer> selectedItemPositions = mAdapter.getSelectedItems();
         for (int i = selectedItemPositions.size() - 1; i >= 0; i--) {
             Coupon c = mCoupons.get(selectedItemPositions.get(i));
@@ -180,6 +204,11 @@ public class ListActivity extends BaseActivity implements
 
     private void markCheckedItems() {
         List<Integer> selectedItems = mAdapter.getSelectedItems();
+
+        mTracker.send(new HitBuilders.EventBuilder()
+                .setCategory(GA.CAT_COUPON_LIST)
+                .setAction(GA.ACTION_MARK_USED)
+                .build());
 
         for (int i : selectedItems) {
             Coupon c = mCoupons.get(i);
@@ -197,6 +226,12 @@ public class ListActivity extends BaseActivity implements
             int idx = mRecyclerView.getChildPosition(v);
             myToggleSelection(idx);
         } else {
+
+            mTracker.send(new HitBuilders.EventBuilder()
+                    .setCategory(GA.CAT_COUPON_LIST)
+                    .setAction(GA.ACTION_OPEN_COUPON)
+                    .build());
+
             Coupon c = (Coupon) v.getTag();
             Intent intent = new Intent(this, CouponActivity.class);
             intent.putExtra(CouponActivity.EXTRA_COUPON, c);

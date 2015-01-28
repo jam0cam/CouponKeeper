@@ -35,6 +35,8 @@ import android.widget.Switch;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.google.android.gms.analytics.HitBuilders;
+import com.google.android.gms.analytics.Tracker;
 import com.jiacorp.cwallet.exceptions.DBException;
 import com.nostra13.universalimageloader.core.ImageLoader;
 import com.nostra13.universalimageloader.core.listener.SimpleImageLoadingListener;
@@ -123,6 +125,7 @@ public class CouponActivity extends BaseActivity {
     boolean mIsEditMode = false;
     private ImageLoader mImageLoader;
     boolean isDeleted = false;
+    private Tracker mTracker;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -132,6 +135,8 @@ public class CouponActivity extends BaseActivity {
         ButterKnife.inject(this);
 
         setSupportActionBar(mToolbar);
+
+        mTracker = ((CouponApplication)getApplication()).getTracker();
 
         mImageLoader = ImageLoader.getInstance();
         mDateFormat = android.text.format.DateFormat.getDateFormat(this);
@@ -183,8 +188,18 @@ public class CouponActivity extends BaseActivity {
             @Override
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
                 if (isChecked) {
+                    mTracker.send(new HitBuilders.EventBuilder()
+                            .setCategory(GA.CAT_COUPON_ACTIVITY)
+                            .setAction(GA.ACTION_MARK_TOGGLE)
+                            .setLabel(GA.LABEL_MARK_USED)
+                            .build());
                     showOverlay();
                 } else {
+                    mTracker.send(new HitBuilders.EventBuilder()
+                            .setCategory(GA.CAT_COUPON_ACTIVITY)
+                            .setAction(GA.ACTION_MARK_TOGGLE)
+                            .setLabel(GA.LABEL_MARK_UNUSED)
+                            .build());
                     hideOverlay();
                 }
             }
@@ -221,10 +236,15 @@ public class CouponActivity extends BaseActivity {
         startActivityForResult(chooserIntent, SELECT_PICTURE);
     }
 
+
     @Override
     protected void onResume() {
-        Log.d(TAG, "onResume");
         super.onResume();
+
+        mTracker.send(new HitBuilders.EventBuilder()
+                .setCategory(GA.CAT_COUPON_ACTIVITY)
+                .setAction(GA.ACTION_PAGE_RESUMED)
+                .build());
     }
 
     @Override
@@ -347,6 +367,11 @@ public class CouponActivity extends BaseActivity {
                 return true;
             }
 
+            mTracker.send(new HitBuilders.EventBuilder()
+                    .setCategory(GA.CAT_COUPON_ACTIVITY)
+                    .setAction(GA.ACTION_DELETE)
+                    .build());
+
             CouponHandler.deleteCoupon(mCoupon, mDbHandler, this);
             isDeleted = true;
             finishAfterDelete();
@@ -388,9 +413,23 @@ public class CouponActivity extends BaseActivity {
 
         if (resultCode == RESULT_OK) {
             if (data == null) {
+
+                mTracker.send(new HitBuilders.EventBuilder()
+                        .setCategory(GA.CAT_COUPON_ACTIVITY)
+                        .setAction(GA.ACTION_ADD_IMAGE)
+                        .setLabel(GA.LABEL_IMAGE_CAMERA)
+                        .build());
+
                 displayCapturedImage(mNewPhotoUri);
                 mSelectedImageUri = null;
             } else {
+
+                mTracker.send(new HitBuilders.EventBuilder()
+                        .setCategory(GA.CAT_COUPON_ACTIVITY)
+                        .setAction(GA.ACTION_ADD_IMAGE)
+                        .setLabel(GA.LABEL_IMAGE_ATTACH)
+                        .build());
+
                 //this is when the user attaches an image already saved on the phone.
                 mSelectedImageUri = data.getData();
                 if (mSelectedImageUri != null) {
@@ -425,6 +464,12 @@ public class CouponActivity extends BaseActivity {
 
     @OnClick(R.id.btn_rotate_right)
     public void rotateRight() {
+
+        mTracker.send(new HitBuilders.EventBuilder()
+                .setCategory(GA.CAT_COUPON_ACTIVITY)
+                .setAction(GA.ACTION_ROTATE)
+                .build());
+
         Log.d(TAG, "Rotating by 90");
         int nextRotation = getRightRotationValue();
         mAttacher.setRotationTo(nextRotation);
@@ -622,6 +667,11 @@ public class CouponActivity extends BaseActivity {
             //rename the path to have proper convention, then save
             newFileName = renameFileWithMetaData(mCoupon, pathToSave);
             try {
+                mTracker.send(new HitBuilders.EventBuilder()
+                        .setCategory(GA.CAT_COUPON_ACTIVITY)
+                        .setAction(GA.ACTION_COUPON_ADDED)
+                        .build());
+
                 CouponHandler.addCoupon(mCoupon, mDbHandler, this);
                 finalSaveStep(newFileName);
                 finishAfterAdd();

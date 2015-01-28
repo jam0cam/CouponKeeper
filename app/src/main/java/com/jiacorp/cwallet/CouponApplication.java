@@ -3,6 +3,8 @@ package com.jiacorp.cwallet;
 import android.app.Application;
 import android.graphics.Bitmap;
 
+import com.google.android.gms.analytics.GoogleAnalytics;
+import com.google.android.gms.analytics.Tracker;
 import com.nostra13.universalimageloader.core.DisplayImageOptions;
 import com.nostra13.universalimageloader.core.ImageLoader;
 import com.nostra13.universalimageloader.core.ImageLoaderConfiguration;
@@ -14,8 +16,12 @@ import com.nostra13.universalimageloader.core.display.FadeInBitmapDisplayer;
  */
 public class CouponApplication extends Application {
 
+    private static final String TAG = CouponApplication.class.getSimpleName();
+
     MyDBHandler mDbHandler;
     ImageLoader mImageLoader;
+
+    private Tracker mTracker = null;
 
     @Override
     public void onCreate() {
@@ -33,9 +39,6 @@ public class CouponApplication extends Application {
         ImageLoaderConfiguration config = new ImageLoaderConfiguration.Builder(getApplicationContext())
                 .defaultDisplayImageOptions(defaultOptions)
                 .build();
-
-
-
         mImageLoader = ImageLoader.getInstance();
         mImageLoader.init(config);
 
@@ -43,13 +46,9 @@ public class CouponApplication extends Application {
     }
 
     public ImageLoader getImageLoader() {
-
         if (mImageLoader == null) {
-
             ImageLoaderConfiguration config = new ImageLoaderConfiguration.Builder(getApplicationContext())
                     .build();
-
-
             mImageLoader = ImageLoader.getInstance();
             mImageLoader.init(config);
         }
@@ -63,4 +62,14 @@ public class CouponApplication extends Application {
         }
         return mDbHandler;
     }
+
+    public synchronized Tracker getTracker() {
+        if ( null == mTracker ) {
+            GoogleAnalytics analytics = GoogleAnalytics.getInstance(this);
+            mTracker = analytics.newTracker(R.xml.analytics);
+        }
+
+        return mTracker;
+    }
+
 }
