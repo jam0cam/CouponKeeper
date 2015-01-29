@@ -9,6 +9,7 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Matrix;
 import android.graphics.PorterDuff;
+import android.graphics.drawable.Drawable;
 import android.media.ExifInterface;
 import android.net.Uri;
 import android.os.AsyncTask;
@@ -42,6 +43,7 @@ import com.nostra13.universalimageloader.core.ImageLoader;
 import com.nostra13.universalimageloader.core.listener.SimpleImageLoadingListener;
 import com.squareup.picasso.Callback;
 import com.squareup.picasso.Picasso;
+import com.squareup.picasso.Target;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -112,6 +114,8 @@ public class CouponActivity extends BaseActivity {
     Uri mNewPhotoUri;
     Uri mSelectedImageUri;
     Uri mDisplayedUri;
+
+    Bitmap mDownloadedBitmap;
 
     private int mCurrentRotation;
 
@@ -486,7 +490,7 @@ public class CouponActivity extends BaseActivity {
         });
     }
 
-    private void displayCapturedImage(Uri uri) {
+    private void displayCapturedImage(final Uri uri) {
         Log.d(TAG, "displaying photo for path: " + uri.getPath());
         Picasso.with(this)
                 .load(uri)
@@ -495,16 +499,54 @@ public class CouponActivity extends BaseActivity {
                 .into(mImgMain, new Callback() {
                     @Override
                     public void onSuccess() {
+                        Log.d(TAG, "Successfully retrieved photo for display: " + uri.getPath());
                         scrollToTitle();
                     }
 
                     @Override
                     public void onError() {
-
+                        Log.e(TAG, "There was an issue displaying: " + uri.getPath());
                     }
                 });
 
+        if (uri.getPath().contains("http")) {
+            //this image is from the web, so we have to download and save it.
+            downloadImage(uri);
+        }
+
         postImageDisplayed(uri);
+    }
+
+
+    private Target mTarget = new Target() {
+        @Override
+        public void onBitmapLoaded(Bitmap bitmap, Picasso.LoadedFrom from) {
+            Log.d(TAG, "Bitmap downloaded from:" + from.name());
+            mDownloadedBitmap = bitmap;
+        }
+
+        @Override
+        public void onBitmapFailed(Drawable errorDrawable) {
+            Log.d(TAG, "Failed loading bitmap");
+
+        }
+
+        @Override
+        public void onPrepareLoad(Drawable placeHolderDrawable) {
+            Log.d(TAG, "Preparing loading bitmap");
+        }
+    };
+
+
+    /**
+     * This method is only used when a user wants to attach a photo that is not yet on the SD card.
+     * It's usually an image that points to a http location
+     */
+    private void downloadImage(final Uri uri) {
+        Log.d(TAG, "Starting to download: " + uri.getPath());
+        Picasso.with(this)
+                .load(uri)
+                .into(mTarget);
     }
 
     private void postImageDisplayed(Uri uri) {
@@ -583,16 +625,51 @@ public class CouponActivity extends BaseActivity {
         } else {
             //This is likely a photo that was attached. We need to move it to the correct place.
             Uri newUri = getOutputMediaFileUri();
-            String fullPath = getPath(mDisplayedUri);
-            Log.d(TAG, "Attachment is actually located:" + fullPath);
-            File src = new File(fullPath);
 
-            try {
-                Util.copy(src, new File(newUri.getPath()));
-            } catch (IOException e) {
-                Log.e(TAG, "Cannot copy attachment file from " + src.getPath() + " to " + newUri.getPath());
-                e.printStackTrace();
+            if (mDisplayedUri.getPath().contains("http")) {
+                if (mDownloadedBitmap == null) {
+                    Log.d(TAG, "the bitmap has not finished downloading, cannot save");
+
+                    mTracker.send(new HitBuilders.EventBuilder()
+                            .setCategory(GA.CAT_COUPON_ACTIVITY)
+                            .setAction(GA.ACTION_ADD_IMAGE)
+                            .setLabel(GA.LABEL_IMAGE_NOT_DOWNLOADED)
+                            .build());
+
+                    Toast.makeText(this, "There was something wrong in saving your image, please try again", Toast.LENGTH_LONG).show();
+                    return null;
+                } else {
+                    //save the bitmap in the correct place.
+                    File file = new File(newUri.getPath());
+                    try
+                    {
+                        file.createNewFile();
+                        FileOutputStream ostream = new FileOutputStream(file);
+                        mDownloadedBitmap.compress(Bitmap.CompressFormat.JPEG, 75, ostream);
+                        ostream.close();
+                    }
+                    catch (Exception e)
+                    {
+                        Toast.makeText(this, "There was something wrong in saving your image, please try again", Toast.LENGTH_LONG).show();
+                        return null;
+                    }
+                }
+            } else {
+                //this photo is already in the SD card, just have to rename and move it.
+                String fullPath = getPath(mDisplayedUri);
+                Log.d(TAG, "Attachment is actually located:" + fullPath);
+                File src = new File(fullPath);
+
+                try {
+                    Util.copy(src, new File(newUri.getPath()));
+                } catch (IOException e) {
+                    Log.e(TAG, "Cannot copy attachment file from " + src.getPath() + " to " + newUri.getPath());
+                    Toast.makeText(this, "There was something wrong in saving your image, please try again", Toast.LENGTH_LONG).show();
+                    e.printStackTrace();
+                    return null;
+                }
             }
+
             return newUri.getPath();
         }
     }
@@ -639,6 +716,12 @@ public class CouponActivity extends BaseActivity {
         Log.d(TAG, "Expiration Date:" + mTvDate.getText().toString());
 
         String pathToSave = finalizedFileAndGetPath();
+
+        if (pathToSave == null) {
+            //there was something wrong in the saving process. Abort
+            return;
+        }
+
         mCoupon.title = mEtTitle.getText().toString().trim();
         mCoupon.expDateString = mTvDate.getText().toString();
         mCoupon.used = mMarkAsUsed.isChecked();

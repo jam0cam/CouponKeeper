@@ -25,4 +25,5 @@ public class GA {
     public static final String LABEL_MARK_UNUSED = "As UnUsed";
     public static final String LABEL_IMAGE_CAMERA = "By Camera";
     public static final String LABEL_IMAGE_ATTACH = "By Attachment";
+    public static final String LABEL_IMAGE_NOT_DOWNLOADED = "Image not Downloaded";
 }
