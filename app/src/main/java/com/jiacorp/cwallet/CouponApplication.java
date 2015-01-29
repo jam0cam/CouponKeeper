@@ -3,6 +3,7 @@ package com.jiacorp.cwallet;
 import android.app.Application;
 import android.graphics.Bitmap;
 
+import com.crashlytics.android.Crashlytics;
 import com.google.android.gms.analytics.GoogleAnalytics;
 import com.google.android.gms.analytics.Tracker;
 import com.nostra13.universalimageloader.core.DisplayImageOptions;
@@ -10,6 +11,7 @@ import com.nostra13.universalimageloader.core.ImageLoader;
 import com.nostra13.universalimageloader.core.ImageLoaderConfiguration;
 import com.nostra13.universalimageloader.core.assist.ImageScaleType;
 import com.nostra13.universalimageloader.core.display.FadeInBitmapDisplayer;
+import io.fabric.sdk.android.Fabric;
 
 /**
  * Created by jitse on 12/12/14.
@@ -26,6 +28,7 @@ public class CouponApplication extends Application {
     @Override
     public void onCreate() {
         super.onCreate();
+        Fabric.with(this, new Crashlytics());
 
         mDbHandler = new MyDBHandler(this, getString(R.string.db_name), null, 1);
 
