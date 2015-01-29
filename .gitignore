@@ -5,6 +5,7 @@
 .DS_Store
 /build
 /app/build
+/app/*apk
 .idea/*
 *.iml
 gradle/wrapper/gradle-wrapper.jar
