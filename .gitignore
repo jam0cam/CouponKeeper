@@ -4,6 +4,7 @@
 /.idea/libraries
 .DS_Store
 /build
+/app/build
 .idea/*
 *.iml
 gradle/wrapper/gradle-wrapper.jar
@@ -14,3 +15,4 @@ gradlew.bat
 gradle.properties
 app/crashlytics.properties
 app/src/main/assets/crashlytics-build.properties
+app/src/main/res/values/com_crashlytics_export_strings.xml
