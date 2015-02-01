@@ -4,6 +4,7 @@ import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
 import android.content.Intent;
 import android.os.Bundle;
+import android.os.Environment;
 import android.support.v7.widget.DefaultItemAnimator;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
@@ -18,7 +19,10 @@ import android.widget.ImageButton;
 
 import com.google.android.gms.analytics.HitBuilders;
 import com.google.android.gms.analytics.Tracker;
+import com.jiacorp.cwallet.exceptions.DBException;
 
+import java.io.File;
+import java.util.Arrays;
 import java.util.List;
 
 import butterknife.ButterKnife;
@@ -87,6 +91,53 @@ public class ListActivity extends BaseActivity implements
         mRecyclerView.setVisibility(View.GONE);
         reloadCoupons();
 
+        if (mCoupons.isEmpty()) {
+            searchForExistingCouponsInSDCard();
+        }
+
+    }
+
+    private void searchForExistingCouponsInSDCard() {
+        File mediaStorageDir = new File(Environment.getExternalStoragePublicDirectory(
+                Environment.DIRECTORY_PICTURES), getString(R.string.app_name));
+
+        if (!mediaStorageDir.exists()) {
+            //this folder doesn't exist, so there is no data to load
+            return;
+        }
+
+        File[] fi = mediaStorageDir.listFiles();
+        if (fi.length == 0) {
+            //there are no files, so just exit
+            return;
+        }
+
+        List<File> files = Arrays.asList(fi);
+        for (File f : files) {
+            Coupon coupon = Coupon.fromFile(f);
+
+            if (coupon != null) {
+                try {
+                    CouponHandler.addCoupon(coupon, mDbHandler, this);
+
+                    mTracker.send(new HitBuilders.EventBuilder()
+                            .setCategory(GA.CAT_COUPON_ACTIVITY)
+                            .setAction(GA.ACTION_AUTO_COUPON_ADDED)
+                            .build());
+
+                } catch (DBException e) {
+                    mTracker.send(new HitBuilders.EventBuilder()
+                            .setCategory(GA.CAT_COUPON_ACTIVITY)
+                            .setAction(GA.ACTION_ERROR_ADD_COUPON)
+                            .build());
+
+                    Log.e(TAG, "Cannot save coupon");
+                    e.printStackTrace();
+                }
+            }
+        }
+
+        reloadCoupons();
     }
 
     @Override

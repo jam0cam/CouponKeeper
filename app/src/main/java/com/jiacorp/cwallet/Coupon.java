@@ -43,7 +43,7 @@ public class Coupon implements Serializable {
             return null;
         }
 
-        c.title = result[0];
+        c.title = result[0].replace(SPACE_DELIMITER, " ");
         String[] date = result[2].split(DATE_DELIMITER);
         c.expDateString = date[0] + "/" + date[1] + "/" + date[2];
 

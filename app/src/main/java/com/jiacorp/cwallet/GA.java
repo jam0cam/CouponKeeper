@@ -16,8 +16,10 @@ public class GA {
     public static final String ACTION_ROTATE = "Rotate";
     public static final String ACTION_MARK_TOGGLE = "Mark Toggle";
     public static final String ACTION_ADD_IMAGE = "Add Image";
+    public static final String ACTION_ERROR_ADD_COUPON = "Add Coupon error";
 
     public static final String ACTION_COUPON_ADDED = "Coupon Added";
+    public static final String ACTION_AUTO_COUPON_ADDED = "Coupon Auto Added";
 
     public static final String LABEL_SORT_DATE = "By Date";
     public static final String LABEL_SORT_NAME = "By Name";

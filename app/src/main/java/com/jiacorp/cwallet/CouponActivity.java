@@ -749,15 +749,20 @@ public class CouponActivity extends BaseActivity {
             //rename the path to have proper convention, then save
             newFileName = renameFileWithMetaData(mCoupon, pathToSave);
             try {
+                CouponHandler.addCoupon(mCoupon, mDbHandler, this);
                 mTracker.send(new HitBuilders.EventBuilder()
                         .setCategory(GA.CAT_COUPON_ACTIVITY)
                         .setAction(GA.ACTION_COUPON_ADDED)
                         .build());
-
-                CouponHandler.addCoupon(mCoupon, mDbHandler, this);
                 finalSaveStep(newFileName);
                 finishAfterAdd();
             } catch (DBException e) {
+
+                mTracker.send(new HitBuilders.EventBuilder()
+                        .setCategory(GA.CAT_COUPON_ACTIVITY)
+                        .setAction(GA.ACTION_ERROR_ADD_COUPON)
+                        .build());
+
                 Toast.makeText(this, "Cannot save coupon", Toast.LENGTH_SHORT).show();
                 Log.e(TAG, "Cannot save coupon");
                 e.printStackTrace();
