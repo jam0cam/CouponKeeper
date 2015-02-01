@@ -18,4 +18,5 @@
     <string name="new_coupon">New Coupon</string>
     <string name="coupon_image_description">Coupon photo</string>
     <string name="action_notify_now">notify now</string>
+    <string name="title_activity_first">FirstActivity</string>
 </resources>

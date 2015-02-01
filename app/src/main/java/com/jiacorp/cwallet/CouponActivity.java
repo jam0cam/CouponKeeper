@@ -53,6 +53,7 @@ import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
+import java.util.Random;
 
 import butterknife.ButterKnife;
 import butterknife.InjectView;
@@ -72,9 +73,7 @@ public class CouponActivity extends BaseActivity {
 
     private static final int SELECT_PICTURE = 3;
 
-    private static final String TOKEN_DELIMITER = "kkk";
-    private static final String SPACE_DELIMITER = "xxx";
-    private static final String DATE_DELIMITER = "yyy";
+
 
     @InjectView(R.id.scroll_view)
     ScrollView mScrollView;
@@ -621,7 +620,7 @@ public class CouponActivity extends BaseActivity {
     private String finalizedFileAndGetPath() {
         if (mDisplayedUri.getPath().contains(getResources().getString(R.string.app_name))) {
             //this is already in the correct place.
-            return mDisplayedUri.getPath();
+            return mDisplayedUri.toString().replace("file://", "");
         } else {
             //This is likely a photo that was attached. We need to move it to the correct place.
             Uri newUri = getOutputMediaFileUri();
@@ -817,10 +816,13 @@ public class CouponActivity extends BaseActivity {
         int idx = originalPath.lastIndexOf("/");
         String prefix = originalPath.substring(0, idx + 1);
 
-        String concatenatedTitle = c.title.replace(" " , SPACE_DELIMITER);
-        String formattedDate = c.expDateString.replace("/", DATE_DELIMITER);
-        String currentTimeStamp = String.valueOf(System.currentTimeMillis());
-        String newFilePath = prefix + concatenatedTitle + TOKEN_DELIMITER + currentTimeStamp + TOKEN_DELIMITER + formattedDate + ".jpg";
+        String concatenatedTitle = c.title.replace(" " , Coupon.SPACE_DELIMITER);
+        String formattedDate = c.expDateString.replace("/", Coupon.DATE_DELIMITER);
+        String randomNumber = String.valueOf(new Random().nextInt(1000));
+        String isUsed = c.used ? "used" : "unused";
+
+        String newFilePath = prefix + concatenatedTitle + Coupon.TOKEN_DELIMITER + randomNumber
+                + Coupon.TOKEN_DELIMITER + formattedDate + Coupon.TOKEN_DELIMITER + isUsed + ".jpg";
 
         Log.d(TAG, "changing file name from: " + originalPath + " to: " + newFilePath);
         File newFile = new File(newFilePath);

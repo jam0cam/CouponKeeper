@@ -6,45 +6,46 @@
 
     <uses-feature android:name="android.hardware.camera" />
     <uses-feature android:name="android.hardware.camera.autofocus" />
-    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
 
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
 
     <application
+        android:name=".CouponApplication"
         android:allowBackup="true"
         android:icon="@drawable/launcher"
         android:label="@string/app_name"
-        android:theme="@style/AppTheme"
-        android:name="com.jiacorp.cwallet.CouponApplication"
-        >
+        android:theme="@style/AppTheme" >
         <activity
-            android:name="com.jiacorp.cwallet.ListActivity"
+            android:name=".ListActivity"
             android:label="@string/app_name"
-            android:screenOrientation="portrait"
-            >
+            android:screenOrientation="portrait" >
+        </activity>
+        <activity
+            android:name=".CouponActivity"
+            android:label="@string/app_name"
+            android:screenOrientation="portrait" >
+        </activity>
+
+        <activity
+            android:name=".FirstActivity"
+            android:label="@string/title_activity_first" >
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
-
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity
-            android:name="com.jiacorp.cwallet.CouponActivity"
-            android:label="@string/app_name"
-            android:screenOrientation="portrait"
-            >
-        </activity>
 
-        <receiver android:name="com.jiacorp.cwallet.AlarmReceiver"/>
+        <receiver android:name=".AlarmReceiver" />
 
-        <meta-data android:name="com.google.android.gms.version"
+        <meta-data
+            android:name="com.google.android.gms.version"
             android:value="@integer/google_play_services_version" />
-
-
         <meta-data
             android:name="com.crashlytics.ApiKey"
             android:value="e1a67b236e055ac2a028108be9a302898966114e" />
+
     </application>
 
 </manifest>
